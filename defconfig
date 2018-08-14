@@ -1,0 +1,4 @@
+datadir=/srv/www
+ALBUM=y
+CHAT=y
+PLAYMUSIC=y
