@@ -8,9 +8,9 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 		-->
-		<link href="css/bootstrap.min.css" rel="stylesheet" type="text/css">
-		<script src="js/jquery.min.js"></script>
-		<script src="js/bootstrap.min.js"></script>
+		<link href="/trust/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+		<script src="/trust/js/jquery.min.js"></script>
+		<script src="/trust/js/bootstrap.min.js"></script>
 		<script src="js/ouishell.js"></script>
 		<script type="text/javascript">
 var startfile = undefined;
@@ -132,22 +132,57 @@ shell.onauthorization = function(user)
 	shell.ls();
 }
 
+musicplaypause = function(force)
+{
+	var player = $("#Player")[0];
+	if (force == undefined)
+		force = !player.paused;
+	if (force == false)
+	{
+		if ($("#Play") != undefined)
+		{
+			$("#Play").addClass("glyphicon-pause");
+			$("#Play").removeClass("glyphicon-play");
+		}
+		player.play();
+	}
+	else
+	{
+		if ($("#Play") != undefined)
+		{
+			$("#Play").removeClass("glyphicon-pause");
+			$("#Play").addClass("glyphicon-play");
+		}
+		player.pause();
+	}
+}
+
 musicplay = function(index)
 {
-	var list = $("#PlayList").children("a").removeClass("active");
+	var list = $("#PlayList").children("a");
 	var player = $("#Player")[0];
-	player.pause();
 	if (index < 0 || index >= list.length)
 		return;
 
-	var current = $($(list)[index]);
-	$(current).addClass("active");
-	$("#MusicTitle").html($(current).html());
-	var href = $(current).data("href");
-	var type = $(current).data("type");
-	$("#Player source").attr("src", href).attr("type", type);
-	player.load();
-	player.oncanplaythrough = player.play();
+	var current = $("#PlayList").find("a.active");
+	var currentid = undefined;
+	if (current.length > 0)
+		currentid = $(list).index($(current)[0]);
+	if (currentid != index)
+	{
+		musicplaypause(false);
+		$(current).removeClass("active");
+
+		current = $($(list)[index]);
+		$(current).addClass("active");
+		$("#MusicTitle").html($(current).html());
+		var href = $(current).data("href");
+		var type = $(current).data("type");
+		$("#Player source").attr("src", href).attr("type", type);
+		player.load();
+	}
+	else
+		musicplaypause();
 }
 
 musicnext = function()
@@ -182,8 +217,12 @@ $(document).ready(function()
 		musicnext();
 	});
 	$("#Player").on("abort", function (evt) {
-		$("#MusicTitle").html("");
+		musicpause(true);
 	});
+	$("#Player").on("canplaythrough", function (evt) {
+		musicpause(false);
+	});
+	$("#Player").prop("autoplay", true);
 });
 		</script>
 	</head>
@@ -214,20 +253,20 @@ $(document).ready(function()
 						</li>
 					</ul>
 					<form class="navbar-form navbar-right">
-						<button type="button" class="btn btn-default hidden ProtectedButton" id="ReloadButton">
-							<span class='glyphicon glyphicon-refresh' aria-hidden="true"></span>&nbsp
-						</button>
-						<div class="form-group hidden">
-							<input class="form-control" placeholder="Search" type="text">
-						</div>
-						<button type="button" class="btn btn-default hidden">
-							<span class='glyphicon glyphicon-search' aria-hidden="true"></span>
-						</button>
-						<button type="button" class="btn btn-default" data-toggle="modal" data-target="#LoginBox" id="LoginButton">
-							<span class='glyphicon glyphicon-user' aria-hidden="true"></span>
-						</button>
 						<div class="input-group">
 							<div class="input-group-btn">
+								<button type="button" class="btn btn-default hidden ProtectedButton" id="ReloadButton">
+									<span class='glyphicon glyphicon-refresh' aria-hidden="true"></span>&nbsp
+								</button>
+								<div class="form-group hidden">
+									<input class="form-control" placeholder="Search" type="text">
+								</div>
+								<button type="button" class="btn btn-default hidden">
+									<span class='glyphicon glyphicon-search' aria-hidden="true"></span>
+								</button>
+								<button type="button" class="btn btn-default" data-toggle="modal" data-target="#LoginBox" id="LoginButton">
+									<span class='glyphicon glyphicon-user' aria-hidden="true"></span>
+								</button>
 								<button type="button" class="btn btn-default hidden" id="UserButton"></button>
 								<button type="button" class="btn btn-default hidden" id="LogoutButton">&nbsp;
 									<span class='glyphicon glyphicon-off'></span>&nbsp;
@@ -243,7 +282,12 @@ $(document).ready(function()
 			<div class="row">
 				<div class="col-sm-6 col-xs-12">
 					<div class="panel panel-default">
-						<div class="panel-heading"><h3>Play List</h3></div>
+						<div class="panel-heading">
+							<div class="row">
+								<h3 class="col-xs-9">Play List</h3>
+								<span class="col-xs-2 visible-xs btn btn-info glyphicon glyphicon-play" id="Play" onclick="musicplaypause()"></span>
+							</div>
+						</div>
 						<div class="panel-body">
 							<div class="list-group container-fluid ProtectedButton" id="PlayList">
 							</div>
@@ -256,9 +300,11 @@ $(document).ready(function()
 						<div class="panel-heading"><h3 id="MusicTitle"></h3></div>
 						<div class="panel-body">
 							<div class="container-fluid">
-								<audio id="Player" class="row ProtectedButton" controls>
-									<source src="#" type="audio/mpeg"/>
-								</audio>
+								<div class="row">
+									<audio id="Player" class="col-xs-12 ProtectedButton" controls>
+										<source src="#" type="audio/mpeg"/>
+									</audio>
+								<div>
 							</div>
 						</div>
 					</div>

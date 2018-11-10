@@ -8,10 +8,10 @@
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 		-->
 		<title>Ouistiti</title>
-		<link href="apps/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-		<script src="apps/js/jquery.min.js"></script>
-		<script src="apps/js/bootstrap.min.js"></script>
-		<script src="apps/js/ouishell.js"></script>
+		<link href="/trust/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+		<script src="/trust/js/jquery.min.js"></script>
+		<script src="/trust/js/bootstrap.min.js"></script>
+		<script src="/apps/js/ouishell.js"></script>
 		<script type="text/javascript">
 var shell = new Shell("");
 shell.onauthenticate = function(authenticate, result)
@@ -150,17 +150,17 @@ $(document).ready(function()
 -->
 					</ul>
 					<form class="navbar-form navbar-right">
-						<div class="form-group hidden">
-							<input class="form-control" placeholder="Search" type="text">
-						</div>
-						<button type="button" class="btn btn-default hidden">
-							<span class='glyphicon glyphicon-search' aria-hidden="true"></span>
-						</button>
-						<button type="button" class="btn btn-default" data-toggle="modal" data-target="#LoginBox" id="LoginButton">
-							<span class='glyphicon glyphicon-user' aria-hidden="true"></span>
-						</button>
 						<div class="input-group">
 							<div class="input-group-btn">
+								<div class="form-group hidden">
+									<input class="form-control" placeholder="Search" type="text">
+								</div>
+								<button type="button" class="btn btn-default hidden">
+									<span class='glyphicon glyphicon-search' aria-hidden="true"></span>
+								</button>
+								<button type="button" class="btn btn-default" data-toggle="modal" data-target="#LoginBox" id="LoginButton">
+									<span class='glyphicon glyphicon-user' aria-hidden="true"></span>
+								</button>
 								<button type="button" class="btn btn-default hidden" id="UserButton"></button>
 								<button type="button" class="btn btn-default hidden" id="LogoutButton">&nbsp;
 									<span class='glyphicon glyphicon-off'></span>&nbsp;
