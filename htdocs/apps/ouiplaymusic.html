@@ -132,22 +132,57 @@ shell.onauthorization = function(user)
 	shell.ls();
 }
 
+musicplaypause = function(force)
+{
+	var player = $("#Player")[0];
+	if (force == undefined)
+		force = player.paused;
+	if (force == true)
+	{
+		if ($("#Play") != undefined)
+		{
+			$("#Play").addClass("glyphicon-pause");
+			$("#Play").removeClass("glyphicon-play");
+		}
+		player.play();
+	}
+	else
+	{
+		if ($("#Play") != undefined)
+		{
+			$("#Play").removeClass("glyphicon-pause");
+			$("#Play").addClass("glyphicon-play");
+		}
+		player.pause();
+	}
+}
+
 musicplay = function(index)
 {
-	var list = $("#PlayList").children("a").removeClass("active");
+	var list = $("#PlayList").children("a");
 	var player = $("#Player")[0];
-	player.pause();
 	if (index < 0 || index >= list.length)
 		return;
 
-	var current = $($(list)[index]);
-	$(current).addClass("active");
-	$("#MusicTitle").html($(current).html());
-	var href = $(current).data("href");
-	var type = $(current).data("type");
-	$("#Player source").attr("src", href).attr("type", type);
-	player.load();
-	player.oncanplaythrough = player.play();
+	var current = $("#PlayList").find("a.active");
+	var currentid = undefined;
+	if (current.length > 0)
+		currentid = $(list).index($(current)[0]);
+	if (currentid != index)
+	{
+		musicplaypause(false);
+		$(current).removeClass("active");
+
+		current = $($(list)[index]);
+		$(current).addClass("active");
+		$("#MusicTitle").html($(current).html());
+		var href = $(current).data("href");
+		var type = $(current).data("type");
+		$("#Player source").attr("src", href).attr("type", type);
+		player.load();
+	}
+	else
+		musicplaypause();
 }
 
 musicnext = function()
@@ -182,8 +217,8 @@ $(document).ready(function()
 		musicnext();
 	});
 	$("#Player").on("abort", function (evt) {
-		$("#MusicTitle").html("");
 	});
+	$("#Player").prop("autoplay", true);
 });
 		</script>
 	</head>
