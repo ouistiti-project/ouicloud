@@ -132,7 +132,11 @@ class Authenticate
 						document.cookie = "Authorization="+this.authorization+";"+document.cookie;
 					var username = xhr.getResponseHeader("X-Remote-User");
 					if (username != undefined)
-					this.user = new User(username, xhr.getResponseHeader("X-Remote-Group"), xhr.getResponseHeader("X-Remote-Home"));
+					var group = xhr.getResponseHeader("X-Remote-Group");
+					var home = xhr.getResponseHeader("X-Remote-Home");
+					if (home == undefined)
+						home = "~"+username;
+					this.user = new User(username, group, home);
 					this.islog = true;
 					if (this.onauthorization != undefined)
 						this.onauthorization.call(this, this.user);
@@ -632,7 +636,6 @@ class Shell
 		var root = search.find(function(elem){
 				return elem.startsWith("root=");
 			});
-		this.root = "/";
 		if (root)
 		{
 			root = root.split("=")[1];
@@ -642,11 +645,7 @@ class Shell
 			//remove the last part of the pathname, the name of the file and the rest...
 			root = location.pathname.replace(/\\/g,'/').replace(/\/[^\/]*$/, '').replace(/^\/?|\/?$/, '');
 		}
-		if (root.lastIndexOf('/') != root.length - 1)
-			root += '/';
-		this.root += root.replace(/\\/g,'/').replace(/^\/?|\/?$/, '');
-		if (this.root == "/")
-			this.root = "";
+		this.chroot(root);
 		var cwd = search.find(function(elem){
 				return elem.startsWith("cwd=");
 			});
@@ -660,6 +659,45 @@ class Shell
 		else
 			this.cwd = "";
 		this.dashboard = new Array();
+
+		this.authenticate = new Authenticate("Basic");
+		this.authenticate.onauthorization = function(user)
+		{
+			this.user = user;
+			this.authorization = this.authenticate.authorization;
+			if (this.user != undefined && this.user.home != undefined)
+				this.root = this.user.home;
+			this.chroot(this.root);
+			this.configure(this.root+"/.config/ouistiti/ouishell.json", function()
+				{
+					if (this.onauthorization != undefined)
+						this.onauthorization.call(this, this.user);
+				});
+		}.bind(this);
+
+		this.authenticate.onauthenticate = function(challenge, result)
+		{
+			this.authenticate.challenge = challenge;
+			if (this.onauthenticate != undefined)
+				this.onauthenticate.call(this, challenge, result);
+		}.bind(this);
+		this.authenticate.onerror = function(status)
+		{
+			if (this.onerror != undefined)
+				this.onerror(status);
+		}.bind(this);
+	}
+	chroot(root)
+	{
+		if (root.lastIndexOf('/') != root.length - 1)
+			root += '/';
+		this.root = "/";
+		this.root += root.replace(/\\/g,'/').replace(/^\/?|\/?$/, '');
+		if (this.root == "/")
+			this.root = "";
+
+		if (this.open != undefined)
+			delete this.open;
 		this.open = new Open(this.root);
 		this.open.onauthenticate = function(challenge, result)
 		{
@@ -679,6 +717,9 @@ class Shell
 			if (this.onerror != undefined)
 				this.onerror(status);
 		}.bind(this);
+
+		if (this.remove != undefined)
+			delete this.remove;
 		this.remove = new Remove(this.root);
 		this.remove.onauthenticate = function(challenge, result)
 		{
@@ -691,6 +732,9 @@ class Shell
 			if (this.onerror != undefined)
 				this.onerror(status);
 		}.bind(this);
+
+		if (this.uploader != undefined)
+			delete this.uploader;
 		this.uploader = new UpLoader(this.root);
 		this.onput = undefined;
 		this.onprogress = undefined;
@@ -708,29 +752,10 @@ class Shell
 			if (this.onauthenticate != undefined)
 				this.onauthenticate.call(this, challenge, result);
 		}.bind(this);
+
+		if (this.change != undefined)
+			delete this.change;
 		this.change = new Change(this.root);
-		this.authenticate = new Authenticate("Basic");
-		this.authenticate.onauthorization = function(user)
-		{
-			this.user = user;
-			this.authorization = this.authenticate.authorization;
-			this.configure(this.root+"/.config/ouistiti/ouishell.json", function()
-				{
-					if (this.onauthorization != undefined)
-						this.onauthorization.call(this, this.user);
-				});
-		}.bind(this);
-		this.authenticate.onauthenticate = function(challenge, result)
-		{
-			this.authenticate.challenge = challenge;
-			if (this.onauthenticate != undefined)
-				this.onauthenticate.call(this, challenge, result);
-		}.bind(this);
-		this.authenticate.onerror = function(status)
-		{
-			if (this.onerror != undefined)
-				this.onerror(status);
-		}.bind(this);
 	}
 	configure(url, callback)
 	{
@@ -1039,10 +1064,15 @@ class Shell
 				this.oncompleted(id);
 			}
 		}.bind(this);
-		if (directory != undefined)
-			this.uploader.open(this.cwd+"/"+directory);
-		else
-			this.uploader.open(this.cwd);
+		if (this.cwd.length > 0)
+		{
+			if (directory != undefined)
+				this.uploader.open(this.cwd+"/"+directory);
+			else
+				this.uploader.open(this.cwd);
+		}
+		else if (directory != undefined)
+			this.uploader.open(directory);
 		this.uploader.set();
 		this.uploader.exec(this.authorization);
 		return id;
