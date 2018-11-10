@@ -191,29 +191,29 @@ shell.onchange = function(content)
 
 		if (content[i].type == 4)
 		{
-			elm.innerHTML = "<span class='glyphicon glyphicon-folder-open col-xs-1 center'></span>";
-			elm.innerHTML += "<span class='name col-sm-8 col-xs-10'><a href='#' data-mime='"+mime+"' data-href='"+this.cwd+"/"+escapingname+"' onclick='shell.cd(this.getAttribute(\"data-href\"));'>"+content[i].name+"</a></span>";
+			elm.innerHTML = "<span class='glyphicon glyphicon-folder-open col-xs-1 col-xs-2 center'></span>";
+			elm.innerHTML += "<span class='name col-xs-8'><a href='#' data-mime='"+mime+"' data-href='"+this.cwd+"/"+escapingname+"' onclick='shell.cd(this.getAttribute(\"data-href\"));'>"+content[i].name+"</a></span>";
 			dropmenu	+= deletemenu+renamemenu;
 			elm.innerHTML += "<span class='col-sm-2 hidden-xs col-pull-right center'></span>";
 		}
 		else if (content[i].type == 8)
 		{
-			elm.innerHTML = "<span class='glyphicon glyphicon-file col-xs-1 center'></span>";
-			elm.innerHTML += "<span class='name col-sm-8 col-xs-10'><a href='#' data-mime='"+mime+"' data-href=\""+escapingname+"\" onclick='launchlink(this)'>"+content[i].name+"</a></span>";
+			elm.innerHTML = "<span class='glyphicon glyphicon-file col-xs-2 col-sm-1 center'></span>";
+			elm.innerHTML += "<span class='name col-xs-8'><a href='#' data-mime='"+mime+"' data-href=\""+escapingname+"\" onclick='launchlink(this)'>"+content[i].name+"</a></span>";
 			dropmenu	+= downloadmenu+deletemenu+renamemenu+copymenu+sharemenu;
 			elm.innerHTML += "<span class='col-sm-2 hidden-xs col-pull-right center'>"+content[i].size+"</span>";
 		}
 		else
 		{
-			elm.innerHTML = "<span class='glyphicon glyphicon-link col-xs-1'></span>";
-			elm.innerHTML += "<span class='name col-sm-8 col-xs-10' data-mime='"+mime+"'>"+content[i].name+"</span>";
+			elm.innerHTML = "<span class='glyphicon glyphicon-link col-xs-2 col-sm-1'></span>";
+			elm.innerHTML += "<span class='name col-xs-8' data-mime='"+mime+"'>"+content[i].name+"</span>";
 			dropmenu	+= downloadmenu+deletemenu+renamemenu+copymenu+sharemenu;
 			elm.innerHTML += "<span class='col-sm-2 hidden-xs col-pull-right center'>"+content[i].size+"</span>";
 		}
 
 		dropmenu	+= "</ul>";
 		var dropdown 	= "<span class='dropdown'><button href='#' id='menu"+i+"' class='btn btn-default dropdown-toggle' data-toggle='dropdown' role='button' aria-haspopup='true' aria-expanded='false'><span class='glyphicon glyphicon-list'></span></button>"+dropmenu+"</span>";
-		elm.innerHTML += "<span class='col-xs-1 col-pull-right center'>"+dropdown+"</span>";
+		elm.innerHTML += "<span class='col-xs-2 col-sm-1 col-pull-right center'>"+dropdown+"</span>";
 		ls.appendChild(elm);
 	}
 }
