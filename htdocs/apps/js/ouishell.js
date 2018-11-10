@@ -36,7 +36,7 @@ class Authenticate
 		this.authorization = undefined;
 		this.method = "HEAD";
 		// remove the file's name from pathname
-		this.url = location.pathname.replace(/\\/g,'/').replace(/\/[^\/]*$/, '')
+		this.url = location.pathname.replace(/\\/g,'/').replace(/\/[^\/]*$/, '') + "/";
 		this.islog = false;
 		this.onauthorization = undefined;
 		this.onauthenticate = undefined;
@@ -120,10 +120,11 @@ class Authenticate
 	}
 	get()
 	{
-		const xhr = this.uploadXHR;
+		var xhr = this.uploadXHR;
 
 		xhr.onreadystatechange = function()
 		{
+			var xhr = this.uploadXHR;
 			if (xhr.readyState === XMLHttpRequest.DONE)
 			{
 				if (xhr.status === 200)
@@ -131,11 +132,15 @@ class Authenticate
 					if (this.authorization && this.authorization.length > 0)
 						document.cookie = "Authorization="+this.authorization+";"+document.cookie;
 					var username = xhr.getResponseHeader("X-Remote-User");
+					var group = "nogroup";
+					var home = "~";
 					if (username != undefined)
-					var group = xhr.getResponseHeader("X-Remote-Group");
-					var home = xhr.getResponseHeader("X-Remote-Home");
-					if (home == undefined)
-						home = "~"+username;
+					{
+						group = xhr.getResponseHeader("X-Remote-Group");
+						home = xhr.getResponseHeader("X-Remote-Home");
+						if (home == undefined)
+							home = "~"+username;
+					}
 					this.user = new User(username, group, home);
 					this.islog = true;
 					if (this.onauthorization != undefined)
