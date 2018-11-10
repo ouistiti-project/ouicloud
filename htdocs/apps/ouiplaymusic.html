@@ -136,8 +136,8 @@ musicplaypause = function(force)
 {
 	var player = $("#Player")[0];
 	if (force == undefined)
-		force = player.paused;
-	if (force == true)
+		force = !player.paused;
+	if (force == false)
 	{
 		if ($("#Play") != undefined)
 		{
@@ -217,6 +217,10 @@ $(document).ready(function()
 		musicnext();
 	});
 	$("#Player").on("abort", function (evt) {
+		musicpause(true);
+	});
+	$("#Player").on("canplaythrough", function (evt) {
+		musicpause(false);
 	});
 	$("#Player").prop("autoplay", true);
 });
@@ -281,7 +285,7 @@ $(document).ready(function()
 						<div class="panel-heading">
 							<div class="row">
 								<h3 class="col-xs-9">Play List</h3>
-								<span class="col-xs-2 visible-xs btn btn-info glyphicon glyphicon-pause" id="Play" onclick="musicplaypause()"></span>
+								<span class="col-xs-2 visible-xs btn btn-info glyphicon glyphicon-play" id="Play" onclick="musicplaypause()"></span>
 							</div>
 						</div>
 						<div class="panel-body">
