@@ -36,6 +36,7 @@ shell.onchange = function(content)
 				return a.type - b.type;
 			}
 		});
+	var playid = 0;
 	for (i = 0; i < content.length; i++)
 	{
 		var escapingname = encodeURIComponent(content[i].name);
@@ -57,9 +58,12 @@ shell.onchange = function(content)
 				$("#Message").addClass("hidden");
 			}
 			if (content[i].name == startfile)
-				musicplay(i);
+			{
+				playid = i;
+			}
 		}
 	}
+	musicplay(playid);
 }
 shell.onbegin = function(id)
 {
@@ -162,7 +166,14 @@ musicplay = function(index)
 	var list = $("#PlayList").children("a");
 	var player = $("#Player")[0];
 	if (index < 0 || index >= list.length)
+	{
+		if ($("#Play") != undefined)
+		{
+			$("#Play").removeClass("glyphicon-pause");
+			$("#Play").addClass("glyphicon-play");
+		}
 		return;
+	}
 
 	var current = $("#PlayList").find("a.active");
 	var currentid = undefined;
@@ -235,6 +246,18 @@ $(document).ready(function()
 						<span class='glyphicon glyphicon-menu-hamburger' aria-hidden="true"></span>
 					</button>
 					<a href="#" class="navbar-brand">Ouistiti</a>
+					<div class="input-group">
+						<div class="navbar-brand input-group-btn">
+							<button type="button" class="navbar-collapse btn btn-default hidden ProtectedButton" aria-expanded="false" onclick="musicplaypause()">
+								<span class="sr-only">Play</span>
+								<span class='glyphicon glyphicon-play' id="Play" aria-hidden="true"></span>
+							</button>
+							<button type="button" class="navbar-collapse btn btn-default hidden ProtectedButton" aria-expanded="false" onclick="musicnext()">
+								<span class="sr-only">Play</span>
+								<span class='glyphicon glyphicon-fast-forward' id="Next" aria-hidden="true"></span>
+							</button>
+						</div>
+					</div>
 				</div>
 				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 					<ul class="nav navbar-nav">
@@ -283,7 +306,6 @@ $(document).ready(function()
 						<div class="panel-heading">
 							<div class="row">
 								<h3 class="col-xs-9">Play List</h3>
-								<span class="col-xs-2 visible-xs btn btn-info glyphicon glyphicon-play" id="Play" onclick="musicplaypause()"></span>
 							</div>
 						</div>
 						<div class="panel-body">
