@@ -14,8 +14,10 @@ data-$(CHAT)+=htdocs/apps/js/ouichat.js
 data-$(CHAT)+=htdocs/apps/images/ouichat.png
 data-$(PLAYMUSIC)+=htdocs/apps/ouiplaymusic.html
 data-$(PLAYMUSIC)+=htdocs/apps/images/ouiplaymusic.png
+data-$(EDIT)+=htdocs/apps/ouiedit.html
 
 data-y+=htdocs/trust/css/bootstrap.min.css
+data-y+=htdocs/trust/css/bootstrap.min.css.map
 data-y+=htdocs/trust/fonts/glyphicons-halflings-regular.woff2
 data-y+=htdocs/trust/js/bootstrap.min.js
 data-y+=htdocs/trust/js/jquery.min.js

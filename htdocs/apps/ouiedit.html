@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Ouistiti: Editor</title>
+		<meta charset="utf-8">
+		<!--
+		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+		<link href="/trust/css/highlight.min.css" rel="stylesheet" type="text/css">
+		<script src="/trust/js/highlight.min.js"></script>
+		<script src="/trust/js/run_prettify.js"></script>
+
+		-->
+		<link href="/trust/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+		<script src="/trust/js/jquery.min.js"></script>
+		<script src="js/ouishell.js"></script>
+		<script src="/trust/js/bootstrap.min.js"></script>
+		<script type="text/javascript">
+var startfile = undefined
+editfile = function(content)
+{
+	var code = content.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/&/g,"&amp;");
+	$("#Editor").addClass("lang-c").html(content);
+}
+
+savefile = function(filename)
+{
+	var value = $("#Editor").val();
+	var content = value.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
+	var file = new Blob([content], {type : "text/plain"});
+	file.name = filename;
+	shell.rm(filename+".old", function() {
+	});
+	shell.cp(filename, filename+".old", false, function() {
+		shell.rm(filename, function() {
+			shell.put(file, function() {
+				alert("saved");
+			});
+		});
+	});
+}
+
+var shell = new Shell("");
+shell.onchange = function(content)
+{
+}
+shell.onbegin = function(id)
+{
+	$("#ReloadButton").addClass("btn-warning");
+}
+shell.oncompleted = function(id)
+{
+	$("#ReloadButton").removeClass("btn-warning");
+}
+shell.onnotfound = function(url)
+{
+	alert(url.pathname);
+}
+shell.onauthenticate = function(authenticate, result)
+{
+	if (result != undefined)
+	{
+		if (result == "failed")
+		{
+			$("#LoginResult").html("Bad login or password");
+			$("#LoginResult").addClass("has-error");
+			$("#LoginArea").addClass("has-error");
+			$("#LoginArea").prop("aria-invalid",true)
+		}
+		if (result == "logout")
+		{
+			$("#LoginResult").html("Logout");
+			$("#LoginResult").addClass("has-success");
+		}
+		$("#LoginResult").removeClass("hidden");
+	}
+	$("#LoginButton").removeClass("hidden");
+	$("#UserButton").addClass("hidden");
+	$("#LogoutButton").addClass("hidden");
+	$(".ProtectedButton").addClass("hidden");
+}
+shell.onauthorization = function(user)
+{
+	$("#LoginArea").removeClass("has-error");
+	$("#LoginArea").prop("aria-invalid",false)
+	$("#LoginButton").addClass("hidden");
+	if (user != undefined)
+	{
+		$("#UserButton").html(user.name);
+		$("#UserButton").removeClass("hidden");
+		$("#LogoutButton").removeClass("hidden");
+		$(".ProtectedButton").removeClass("hidden");
+	}
+	var pos = location.search.indexOf("file=");
+	if (pos > 0)
+	{
+		pos += 5;
+		var filepath = location.search.substring(pos);		
+		var end = filepath.indexOf("&");
+		if (end == -1)
+			end = undefined;
+		filepath = location.search.substring(pos,end);
+		pos = filepath.indexOf(shell.root);
+		if (pos == 0)
+			filepath = filepath.substring(shell.root.length);
+		startfile = filepath.replace( /.*\//, '');
+		shell.cat(startfile, editfile);
+	}
+	$("#LoginBox").modal('hide');
+}
+$(document).ready(function()
+{
+	shell.login();
+	$("#SaveButton").on("click", function(event)
+	{
+		savefile(startfile);
+	});
+	$("#ReloadButton").on("click", function(event)
+	{
+		shell.cat(startfile, editfile);
+	});
+	$("#LoginExec").on("click", function(event)
+	{
+		shell.login($('#LoginUsername').val(),$('#LoginPassword').val());
+	});
+	$("#LogoutButton").on("click", function(event)
+	{
+		shell.logout();
+	});
+});
+		</script>
+	</head>
+	<body style="padding-top: 70px;">
+		<nav class="navbar navbar-default navbar-fixed-top">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button type="button" class="collapsed navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a href="#" class="navbar-brand">Ouistiti</a>
+				</div>
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<form class="navbar-form navbar-right">
+						<button type="button" class="btn btn-default hidden ProtectedButton" id="ReloadButton">
+							<span class='glyphicon glyphicon-refresh' aria-hidden="true"></span>&nbsp
+						</button>
+						<button type="button" class="btn btn-default hidden ProtectedButton" id="SaveButton">
+							<span class='glyphicon glyphicon-save' aria-hidden="true"></span>&nbsp
+						</button>
+						<div class="form-group hidden">
+							<input class="form-control" placeholder="Search" type="text">
+						</div>
+						<button type="button" class="btn btn-default hidden">
+							<span class='glyphicon glyphicon-search' aria-hidden="true"></span>
+						</button>
+						<button type="button" class="btn btn-default" data-toggle="modal" data-target="#LoginBox" id="LoginButton">
+							<span class='glyphicon glyphicon-user' aria-hidden="true"></span>
+						</button>
+						<div class="input-group">
+							<div class="input-group-btn">
+								<button type="button" class="btn btn-default hidden" id="UserButton"></button>
+								<button type="button" class="btn btn-default hidden" id="LogoutButton">&nbsp;
+									<span class='glyphicon glyphicon-off'></span>&nbsp;
+								</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</nav> 
+		<div class="container">
+			<div id="Message" class="row hidden alert alert-warning"></div>
+			<form class="row">
+				<textarea class="col-xs-12" id="Editor" rows=50 spellcheck=false autofocus style="resize:none;">
+				</textarea>
+			</form>
+		</div>
+		<div class="modal fade" id="MkdirBox" tabindex="-1" role="dialog" aria-labelledby="MkdirLabel">
+<script >
+$(function($)
+{
+	$("#MkdirExec").on("click", function(e) {
+		shell.oncompleted = function(id)
+		{
+			var cwd = shell.cwd+"/"+$('#MkdirName').val();
+			location.search = "root="+shell.root+"&cwd="+cwd;
+		};
+		shell.mkdir($('#MkdirName').val());
+	});
+});
+</script>
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title" id="MkdirLabel">Make Directory</h4>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="input-group">
+							  <span class="input-group-addon" id="MkdirField">New</span>
+							  <input type="text" class="form-control" placeholder="newdir" aria-describedby="MkdirField" name="file" id="MkdirName" >
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary" data-dismiss="modal" id="MkdirExec">OK</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="ShareBox" tabindex="-1" role="dialog" aria-labelledby="ShareLabel">
+<script type="text/javascript">
+//$('#ShareBox').changeHref = function (filename, encrypt)
+ShareBox_changeHref = function (filename, encrypt)
+{
+	var linkname = "$";
+	if (!encrypt)
+	{
+		linkname += "a";
+	}
+	linkname += window.btoa(encodeURIComponent(filename));
+	linkname = encodeURIComponent(linkname);
+	var pathname = "";
+	if (location.pathname.startsWith(shell.root))
+		pathname = location.pathname.substr(shell.root.length);
+	else
+		pathname = location.pathname;
+	var shareurl = "http://"+location.hostname+pathname+"?root="+shell.directories.share+"/"+shell.user.name+"&cwd="+linkname;
+	$('#ShareHref').val(shareurl);
+	return linkname;
+};
+$('#ShareBox').on('show.bs.modal', function (event)
+{
+	$('#ShareBox').find('.btn-primary').on('click', function (e)
+	{
+		var linkname = ShareBox_changeHref(shell.cwd, false);
+		shell.ln("",shell.root+shell.user.directories.share+"/"+linkname);
+	});
+	ShareBox_changeHref(shell.cwd, false);
+});
+</script>
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4 class="modal-title" id="ShareLabel">Share</h4>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="form-group">
+								<div class="input-group">
+									<span class="input-group-addon">URL to share</span>
+									<input type="text" class="form-control" id="ShareHref" placeholder="http://" readonly="true"/>
+								</div>
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary" data-dismiss="modal" id="ShareExec">OK</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="LoginBox" tabindex="-1" role="dialog" aria-labelledby="LoginLabel">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title" id="LoginLabel">Login</h4>
+					</div>
+					<div class="modal-body">
+						<form class="form-group" aria-describedby="LoginResult" id="LoginArea">
+							<span id="LoginResult"  class="help-block hidden"></span>
+							<div class="form-group">
+								<div class="input-group">
+									<span class="input-group-addon" id="UserField">User</span>
+									<input type="text" class="form-control" placeholder="name" aria-describedby="UserField" id="LoginUsername" autofocus>
+								</div>
+							</div>
+							<div class="form-group">
+								<div class="input-group">
+									<span class="input-group-addon" id="PasswordField">Password</span>
+									<input type="password" class="form-control" placeholder="name" aria-describedby="PasswordField" id="LoginPassword" >
+								</div>
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="submit" class="btn btn-primary" id="LoginExec">Login</button>
+					</div>
+				</div>
+			</div>
+		</div>
+ 	</body>
+</html>

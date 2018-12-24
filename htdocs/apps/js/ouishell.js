@@ -17,6 +17,7 @@ class User
 		};
 		this.mimes = 
 		[
+			{ type:"text/*",appli:"ouiedit.html"},
 			{ type:"image/*",appli:"ouialbum.html"},
 			{ type:"audio/*",appli:"ouiplaymusic.html"}
 		];
