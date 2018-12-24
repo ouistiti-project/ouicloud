@@ -199,7 +199,7 @@ class Open
 
 	open(directory)
 	{
-		if (directory[0] != '/')
+		if (directory[0] != '/' && directory[1] != '~')
 			this.directory = this.root;
 		else
 			this.directory = "";
@@ -228,6 +228,7 @@ class Open
 						xhr.response.name = this.file.name;
 						xhr.response.newname = this.file.newname;
 						xhr.response.oldname = this.file.oldname;
+						xhr.response.mime = xhr.getResponseHeader("Content-Type");
 						this.onload.call(this, xhr.response);
 					}
 				}
@@ -318,7 +319,7 @@ class Remove
 
 	open(directory)
 	{
-		if (directory[0] != '/')
+		if (directory[0] != '/' && directory[1] != '~')
 			this.directory = this.root;
 		else
 			this.directory = "";
@@ -400,7 +401,7 @@ class Change
 
 	open(directory)
 	{
-		if (directory[0] != '/')
+		if (directory[0] != '/' && directory[1] != '~')
 			this.directory = this.root;
 		else
 			this.directory = "";
@@ -510,7 +511,7 @@ class UpLoader
 
 	open(directory)
 	{
-		if (directory[0] != '/')
+		if (directory[0] != '/' && directory[1] != '~')
 			this.directory = this.root;
 		else
 			this.directory = "";
@@ -811,7 +812,7 @@ class Shell
 	{
 		this.authenticate.remove();
 	}
-	cd(directory)
+	cd(directory, )
 	{
 		const id = this.generateid();
 		if (this.onbegin != undefined)
@@ -837,9 +838,9 @@ class Shell
 			directory = this.cwd + directory;
 		}
 		const id = this.generateid();
-		this.open.onload = function(result)
+		this.open.onload = function(file)
 		{
-			if (result.type == "text/json")
+			if (file.mime == "text/json")
 			{
 				var reader = new FileReader();
 				reader.onloadend = function (evt)
@@ -858,11 +859,11 @@ class Shell
 							this.onchange(this.content);
 						}
 					}.bind(this);
-				reader.readAsArrayBuffer(result);
+				reader.readAsArrayBuffer(file);
 			}
 			else
 			{
-				alert("receive data type "+result.type);
+				alert("receive data type "+file.type);
 			}
 		}.bind(this);
 		this.open.open(directory);
@@ -901,7 +902,7 @@ class Shell
 		else
 			this.open.go(file,"");
 	}
-	rm(filename)
+	rm(filename, pipe)
 	{
 		const id = this.generateid();
 		if (this.onbegin != undefined)
@@ -910,6 +911,10 @@ class Shell
 		}
 		this.remove.onload = function(file)
 		{
+			if (typeof(pipe) == "function")
+			{
+				pipe(file);
+			}
 			if (this.oncompleted != undefined)
 			{
 				this.oncompleted(id);
@@ -922,7 +927,7 @@ class Shell
 		this.remove.exec(this.authorization);
 		return id;
 	}
-	paste()
+	paste(pipe)
 	{
 		const id = this.generateid();
 		if (this.onbegin != undefined)
@@ -940,6 +945,10 @@ class Shell
 					{
 						this.remove.onload = function(file)
 						{
+							if (typeof(pipe) == "function")
+							{
+								pipe(file);
+							}
 							if (this.oncompleted != undefined)
 							{
 								this.oncompleted(id);
@@ -952,6 +961,10 @@ class Shell
 					}
 					else
 					{
+						if (typeof(pipe) == "function")
+						{
+							pipe(file);
+						}
 						if (this.oncompleted != undefined)
 						{
 							this.oncompleted(id);
@@ -965,7 +978,7 @@ class Shell
 		}
 		return id;
 	}
-	cp(filename, copyname, cut)
+	cp(filename, copyname, cut, pipe)
 	{
 		var file = new Blob();
 		file.name = filename;
@@ -982,6 +995,12 @@ class Shell
 			{
 				this.uploader.onupload = function(file)
 				{
+					alert("cp 1");
+					if (typeof(pipe) == "function")
+					{
+					alert("cp 2");
+						pipe(file);
+					}
 					if (this.oncompleted != undefined)
 					{
 						this.oncompleted(id);
@@ -1002,7 +1021,36 @@ class Shell
 		this.open.exec(this.authorization);
 		return id;
 	}
-	mv(oldname, newname)
+	cat(filename, pipe)
+	{
+		var file = new Blob();
+		file.name = filename;
+		file.pipe = pipe;
+		const id = this.generateid();
+		if (this.onbegin != undefined)
+		{
+			this.onbegin(id);
+		}
+		this.open.onload = function(file)
+		{
+			var reader = new FileReader();
+			reader.onloadend = function (evt)
+				{
+					const array = new Uint8ClampedArray(evt.target.result);
+					var result = new TextDecoder("utf-8").decode(array);
+					if (typeof(pipe) == "function")
+					{
+						pipe(result);
+					}
+				}.bind(this);
+			reader.readAsArrayBuffer(file);
+		}.bind(this);
+		this.open.open(this.cwd);
+		this.open.set(file);
+		this.open.exec(this.authorization);
+		return id;
+	}
+	mv(oldname, newname, pipe)
 	{
 		const id = this.generateid();
 		if (this.onbegin != undefined)
@@ -1013,6 +1061,10 @@ class Shell
 		file.name = oldname;
 		this.change.onload = function(file)
 		{
+			if (typeof(pipe) == "function")
+			{
+				pipe(file);
+			}
 			if (this.oncompleted != undefined)
 			{
 				this.oncompleted(id);
@@ -1056,7 +1108,7 @@ class Shell
 */
 		return id;
 	}
-	mkdir(directory)
+	mkdir(directory, pipe)
 	{
 		const id = this.generateid();
 		if (this.onbegin != undefined)
@@ -1065,6 +1117,10 @@ class Shell
 		}
 		this.uploader.onupload = function(resultjson)
 		{
+			if (typeof(pipe) == "function")
+			{
+				pipe(resultjson);
+			}
 			if (this.oncompleted != undefined)
 			{
 				this.oncompleted(id);
@@ -1083,7 +1139,7 @@ class Shell
 		this.uploader.exec(this.authorization);
 		return id;
 	}
-	ln(filepath,link)
+	ln(filepath,link, pipe)
 	{
 		const id = this.generateid();
 		if (this.onbegin != undefined)
@@ -1092,6 +1148,10 @@ class Shell
 		}
 		this.change.onload = function(file)
 		{
+			if (typeof(pipe) == "function")
+			{
+				pipe(file);
+			}
 			if (this.oncompleted != undefined)
 			{
 				this.oncompleted(id);
@@ -1114,7 +1174,7 @@ class Shell
 		this.change.command(data);
 		this.change.exec(this.authorization);
 	}
-	put(file)
+	put(file, pipe)
 	{
 		const id = this.generateid();
 		if (this.onbegin != undefined)
@@ -1123,6 +1183,10 @@ class Shell
 		}
 		this.uploader.onupload = function(resultjson)
 		{
+			if (typeof(pipe) == "function")
+			{
+				pipe(resultjson);
+			}
 			if (this.oncompleted != undefined)
 			{
 				this.oncompleted(id);
