@@ -92,14 +92,15 @@ class Authenticate
 
 	remove()
 	{
-//		const xhr = new XMLHttpRequest();
-		const xhr = this.uploadXHR;
+		var xhr = this.uploadXHR;
+
 		document.cookie = "Authorization=;";
 		this.authorization = undefined;
 		this.result = "logout";
 		this.user = undefined;
 		xhr.onreadystatechange = function()
 		{
+			var xhr = this.uploadXHR;
 			if (xhr.readyState === XMLHttpRequest.DONE)
 			{
 				if (xhr.status === 401 || xhr.status === 403)
@@ -214,10 +215,11 @@ class Open
 	}
 	exec(authorization)
 	{
-		const xhr = this.uploadXHR;
+		var xhr = this.uploadXHR;
 
 		xhr.onreadystatechange = function()
 		{
+			var xhr = this.uploadXHR;
 			if (xhr.readyState === XMLHttpRequest.DONE)
 			{
 				if (xhr.status === 200)
@@ -336,10 +338,11 @@ class Remove
 
 	exec(authorization)
 	{
-		const xhr = this.uploadXHR;
+		var xhr = this.uploadXHR;
 
 		xhr.onreadystatechange = function()
 		{
+			var xhr = this.uploadXHR;
 			if (xhr.readyState === XMLHttpRequest.DONE)
 			{
 				if (xhr.status === 200)
@@ -430,10 +433,11 @@ class Change
 
 	exec(authorization)
 	{
-		const xhr = this.uploadXHR;
+		var xhr = this.uploadXHR;
 
 		xhr.onreadystatechange = function()
 		{
+			var xhr = this.uploadXHR;
 			if (xhr.readyState === XMLHttpRequest.DONE)
 			{
 				if (xhr.status === 200)
@@ -548,22 +552,24 @@ class UpLoader
 	}
 	exec(authorization)
 	{
-		const xhr = this.uploadXHR;
+		var xhr = this.uploadXHR;
 
 		xhr.upload.onprogress = function(event)
 		{
+			var xhr = this.uploadXHR;
 			if (this.onprogress != undefined)
 				this.onprogress(event.loaded, event.total);
 		}.bind(this);
 		xhr.onreadystatechange = function()
 		{
+			var xhr = this.uploadXHR;
 			if (xhr.readyState === XMLHttpRequest.DONE)
 			{
 				if (xhr.status === 200)
 				{
 					this.isready = false;
 					if (this.onupload != undefined)
-						this.onupload.call(this, JSON.parse(xhr.responseText));
+						this.onupload.call(this, xhr.responseText);
 					this.file = undefined;
 				}
 			}
@@ -812,7 +818,7 @@ class Shell
 	{
 		this.authenticate.remove();
 	}
-	cd(directory, )
+	cd(directory)
 	{
 		const id = this.generateid();
 		if (this.onbegin != undefined)
