@@ -21,8 +21,8 @@
 var startfile = undefined
 editfile = function(content)
 {
-	var code = content.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/&/g,"&amp;");
-	$("#Editor").addClass("lang-c").html(content);
+	var code = content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+	$("#Editor").addClass("lang-c").html(code);
 }
 
 savefile = function(filename)
