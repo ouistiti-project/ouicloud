@@ -309,69 +309,26 @@ $(document).ready(function()
 					</button>
 					<a href="#" class="navbar-brand">Ouistiti</a>
 				</div>
-				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-					<ul class="nav navbar-nav">
-<!--
-						<li class="dropdown"> <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">File<span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li><a id="Cloud" target="_blank">Cloud</a></li>
-							</ul>
-						</li>
--->
-					</ul>
-					<form class="navbar-form navbar-right">
-						<div class="input-group">
-							<div class="input-group-btn">
-								<div class="form-group hidden">
-									<input class="form-control" placeholder="Search" type="text">
-								</div>
-								<button type="button" class="btn btn-default hidden">
-									<span class='glyphicon glyphicon-search' aria-hidden="true"></span>
-								</button>
-								<button type="button" class="btn btn-default" data-toggle="modal" data-target="#LoginBox" id="LoginButton">
-									<span class='glyphicon glyphicon-user' aria-hidden="true"></span>
-								</button>
-								<button type="button" class="btn btn-default hidden" id="UserButton"></button>
-								<button type="button" class="btn btn-default hidden" id="LogoutButton">&nbsp;
-									<span class='glyphicon glyphicon-off'></span>&nbsp;
-								</button>
-							</div>
-						</div>
-					</form>
-				</div>
 			</div>
 		</nav> 
 		<div class="container">
-		</div>
-		<div class="modal fade" id="LoginBox" tabindex="-1" role="dialog" aria-labelledby="LoginLabel">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-						<h4 class="modal-title" id="LoginLabel">Login</h4>
+			<div class="row justify-content-center align-items-center">
+				<form class="form-group" aria-describedby="LoginResult" id="login" action="index.html">
+					<span id="LoginResult"  class="help-block hidden"></span>
+					<div class="form-group">
+						<div class="input-group">
+							<span class="input-group-addon" id="UserField">User</span>
+							<input type="text" class="form-control" placeholder="name" aria-describedby="UserField" name="username" id="username" autofocus>
+						</div>
 					</div>
-					<div class="modal-body">
-						<form class="form-group" aria-describedby="LoginResult" id="login" action="index.html">
-							<span id="LoginResult"  class="help-block hidden"></span>
-							<div class="form-group">
-								<div class="input-group">
-									<span class="input-group-addon" id="UserField">User</span>
-									<input type="text" class="form-control" placeholder="name" aria-describedby="UserField" name="username" id="username" autofocus>
-								</div>
-							</div>
-							<div class="form-group">
-								<div class="input-group">
-									<span class="input-group-addon" id="PasswordField">Password</span>
-									<input type="password" class="form-control" placeholder="name" aria-describedby="PasswordField" name="password" id="password" >
-								</div>
-							</div>
-						</form>
+					<div class="form-group">
+						<div class="input-group">
+							<span class="input-group-addon" id="PasswordField">Password</span>
+							<input type="password" class="form-control" placeholder="name" aria-describedby="PasswordField" name="password" id="password" >
+						</div>
 					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-						<button type="button" class="btn btn-primary" id="LoginExec">Login</button>
-					</div>
-				</div>
+					<button type="button" class="btn btn-primary" id="LoginExec">Login</button>
+				</form>
 			</div>
 		</div>
  	</body>
