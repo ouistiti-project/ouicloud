@@ -287,12 +287,12 @@ $(document).ready(function()
 	var authenticate = new Authenticate("Digest");
 	authenticate.onauthorization = function()
 	{
-		location.pathname = "index.html";
+		$("#login").submit();
 	};
 
 	$("#LoginExec").on("click", function(event)
 	{
-		authenticate.check($('#LoginUsername').val(),$('#LoginPassword').val());
+		authenticate.check($('#username').val(),$('#password').val());
 	});
 });
 		</script>
@@ -351,18 +351,18 @@ $(document).ready(function()
 						<h4 class="modal-title" id="LoginLabel">Login</h4>
 					</div>
 					<div class="modal-body">
-						<form class="form-group" aria-describedby="LoginResult" id="LoginArea">
+						<form class="form-group" aria-describedby="LoginResult" id="login" action="index.html">
 							<span id="LoginResult"  class="help-block hidden"></span>
 							<div class="form-group">
 								<div class="input-group">
 									<span class="input-group-addon" id="UserField">User</span>
-									<input type="text" class="form-control" placeholder="name" aria-describedby="UserField" id="LoginUsername" autofocus>
+									<input type="text" class="form-control" placeholder="name" aria-describedby="UserField" name="username" id="username" autofocus>
 								</div>
 							</div>
 							<div class="form-group">
 								<div class="input-group">
 									<span class="input-group-addon" id="PasswordField">Password</span>
-									<input type="password" class="form-control" placeholder="name" aria-describedby="PasswordField" id="LoginPassword" >
+									<input type="password" class="form-control" placeholder="name" aria-describedby="PasswordField" name="password" id="password" >
 								</div>
 							</div>
 						</form>
