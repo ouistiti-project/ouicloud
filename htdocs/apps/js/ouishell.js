@@ -1182,12 +1182,29 @@ class Shell
 	}
 	put(file, pipe)
 	{
+		var uploader = new UpLoader(this.root);
+		uploader.shell = this;
+		uploader.onload = function(file)
+		{
+			var ret = true;
+			if (this.onput != undefined)
+				ret = this.onput.call(this, file);
+			if (uploader.isready && (ret == true || ret == undefined))
+				uploader.exec(this.authorization);
+		}.bind(this);
+		uploader.onauthenticate = function(challenge, result)
+		{
+			this.authenticate.challenge = challenge;
+			if (this.onauthenticate != undefined)
+				this.onauthenticate.call(this, challenge, result);
+		}.bind(this);
+
 		const id = this.generateid();
 		if (this.onbegin != undefined)
 		{
 			this.onbegin(id);
 		}
-		this.uploader.onupload = function(resultjson)
+		uploader.onupload = function(resultjson)
 		{
 			if (typeof(pipe) == "function")
 			{
@@ -1197,9 +1214,8 @@ class Shell
 			{
 				this.oncompleted(id);
 			}
-			this.uploader.onprogress = undefined;
 		}.bind(this);
-		this.uploader.onerror = function(status)
+		uploader.onerror = function(status)
 		{
 			if (this.onerror != undefined)
 				this.onerror(status);
@@ -1208,15 +1224,15 @@ class Shell
 				this.oncompleted(id);
 			}
 		}.bind(this);
-		this.uploader.onprogress = function(loaded, total)
+		uploader.onprogress = function(loaded, total)
 		{
 			if (this.onprogress != undefined)
 			{
 				this.onprogress(id, (loaded / total) * 100, loaded, total);
 			}
 		}.bind(this);
-		this.uploader.open(this.cwd);
-		this.uploader.get(file);
+		uploader.open(this.cwd);
+		uploader.get(file);
 		return id;
 	}
 };
