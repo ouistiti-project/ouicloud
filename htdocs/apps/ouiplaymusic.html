@@ -14,6 +14,8 @@
 		<script type="text/javascript" src="/apps/js/ouishell.js"></script>
 		<script type="text/javascript">
 var startfile = undefined;
+var defaultmime = undefined;
+var contentmimes = new Array();
 var shell = new Shell("");
 shell.onchange = function(content)
 {
@@ -27,13 +29,17 @@ shell.onchange = function(content)
 	var itemcount = 0;
 	content.sort(function (a,b)
 		{
-			if (a.type == b.type)
+			if (a.type != b.type)
 			{
-				return a.name.localeCompare(b.name);
+				return a.type - b.type;
+			}
+			else if (a.mime != b.mime)
+			{
+				return a.mime.localeCompare(b.mime);
 			}
 			else
 			{
-				return a.type - b.type;
+				return a.name.localeCompare(b.name);
 			}
 		});
 	var playid = 0;
@@ -51,8 +57,23 @@ shell.onchange = function(content)
 			var name = content[i].name.split('.');
 			if (content[i].mime.startsWith("audio/"))
 			{
-				var elm = "<a class='list-group-item' href='#' data-type='"+content[i].mime+"' data-href=\""+this.root+"/"+this.cwd+"/"+escapingname+"\" onclick='musicplay("+itemcount+");'>"+name[0]+"</a>";
+				if (defaultmime == undefined)
+					defaultmime = content[i].mime;
+				var elm = $("<a class='list-group-item' href='#' data-type='"+content[i].mime+"' data-item='"+itemcount+"' data-href=\""+this.root+"/"+this.cwd+"/"+escapingname+"\" ></a>")
+					.on("click", function(event)
+					{
+						musicplay($(event.target).data("item"));
+					})
+					.text(name[0]);
 				itemcount += 1;
+				if (defaultmime != content[i].mime)
+				{
+					elm.addClass("hidden");
+					if (contentmimes.indexOf(defaultmime) == -1)
+						contentmimes.push(defaultmime);
+					if (contentmimes.indexOf(content[i].mime) == -1)
+						contentmimes.push(content[i].mime);
+				}
 				playlist.append(elm);
 				$("#Message").html("");
 				$("#Message").addClass("hidden");
@@ -62,6 +83,27 @@ shell.onchange = function(content)
 				playid = i;
 			}
 		}
+	}
+	var i;
+	$("#mimeselector").addClass("hidden").html("");
+	for (i = 0; i <contentmimes.length; i++)
+	{
+		$("#mimeselector")
+			.append("<li><a href='#' data-mime='"+contentmimes[i]+"'>"+contentmimes[i].split("/")[1]+"</a></li>")
+			.on("click", function(event)
+			{
+				defaultmime = $(event.target).data("mime");
+				$("#defaultmime")
+					.html(defaultmime.split("/")[1]+"<span class='caret'></span>");
+				shell.ls();
+			})
+			.removeClass("hidden");
+	}
+	if (i > 0)
+	{
+		$("#defaultmime")
+			.html(defaultmime.split("/")[1]+"<span class='caret'></span>")
+			.removeClass("hidden");
 	}
 	musicplay(playid);
 }
@@ -228,10 +270,10 @@ $(document).ready(function()
 		musicnext();
 	});
 	$("#Player").on("abort", function (evt) {
-		musicpause(true);
+		musicplaypause(true);
 	});
 	$("#Player").on("canplaythrough", function (evt) {
-		musicpause(false);
+		musicplaypause(false);
 	});
 	$("#Player").prop("autoplay", true);
 });
@@ -253,7 +295,7 @@ $(document).ready(function()
 								<span class='glyphicon glyphicon-play' id="Play" aria-hidden="true"></span>
 							</button>
 							<button type="button" class="navbar-collapse btn btn-default hidden ProtectedButton" aria-expanded="false" onclick="musicnext()">
-								<span class="sr-only">Play</span>
+								<span class="sr-only">Next</span>
 								<span class='glyphicon glyphicon-fast-forward' id="Next" aria-hidden="true"></span>
 							</button>
 						</div>
@@ -306,6 +348,10 @@ $(document).ready(function()
 						<div class="panel-heading">
 							<div class="row">
 								<h3 class="col-xs-9">Play List</h3>
+								<div class="btn-group">
+									<button type="button" data-toggle="dropdown" class="btn btn-default dropdown-toggle hidden" id="defaultmime"></button>
+									<ul id="mimeselector" class="dropdown-menu hidden"></ul>
+								</div>
 							</div>
 						</div>
 						<div class="panel-body">
