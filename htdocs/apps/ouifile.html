@@ -9,16 +9,17 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 		-->
-		<link href="css/bootstrap.min.css" rel="stylesheet" type="text/css">
-		<script type="text/javascript" src="js/jquery.min.js"></script>
-		<script type="text/javascript" src="js/bootstrap.min.js"></script>
-		<script type="text/javascript" src="js/ouishell.js"></script>
+		<link type="text/css" rel="stylesheet" href="/trust/css/bootstrap.min.css">
+		<script type="text/javascript" src="/trust/js/jquery.min.js"></script>
+		<script type="text/javascript" src="/trust/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/apps/js/ouishell.js"></script>
 		<script type="text/javascript">
+var uploaders = new Array();
 class UploadFile
 {
-	constructor(id, file)
+	constructor(file)
 	{
-		this.id = id;
+		this.id = undefined;
 		this.file = file;
 	}
 	destructor()
@@ -61,6 +62,19 @@ class UploadFile
 	}
 	start()
 	{
+		this.id = shell.put(this.file);
+		var progress = $("<div class='progress'></div>")
+			.append("<div id='progress"+this.id+"' class='progress-bar progress-bar-striped active' role='progressbar' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'></div>");
+		var uploadline = $("<div id='uploadline"+this.id+"'>Upload : "+ this.file.name+"</div>")
+			.append(" <span id='bitrate"+this.id+"'></span>").append(progress);
+		
+		$("#Message").find("div.text").append(uploadline);
+		this.onprogress = function(bitrate, unit)
+		{
+			$("#bitrate"+this.id).html(""+bitrate+" "+unit);
+			$("#progress"+this.id).attr('aria-valuenow', 50).css('width', 50);
+		}.bind(this);
+
 		this.timer = setInterval(this.calculate.bind(this),1000);
 	}
 	stop()
@@ -71,22 +85,27 @@ class UploadFile
 			this.timer = undefined;
 			this.time = undefined;
 		}
+		var i;
+		for (i = 0; i < uploaders.length; i++)
+		{
+			if (uploaders[i].id == this.id)
+				uploaders.splice(i, 1);
+		}
 	}
 };
-var upload = undefined;
 function startRead(evt) {
-    //var file = document.getElementById("file").files[0];
-    var file = evt.target.files[0];
-    if (upload && upload.error != undefined)
+	var i;
+    for (i = 0; i < evt.target.files.length; i++)
     {
-		delete upload;
-		upload = undefined;
+		var file = evt.target.files[i];
+		if (file)
+		{
+			var upload_tmp = new UploadFile(file);
+			uploaders.push(upload_tmp);
+			$("#Message").removeClass("hidden");
+			upload_tmp.start();
+		}
 	}
-    if (file && upload == undefined)
-    {
-		var upload_id = shell.put(file);
-		upload = new UploadFile(upload_id, file);
-    }
     evt.stopPropagation();
     evt.preventDefault();
 }
@@ -120,7 +139,7 @@ shell.onchange = function(content)
 	var changedir = document.getElementById("changedir");
 	changedir.innerHTML = "";
 	var elm = document.createElement("li");
-	elm.innerHTML="<a href='#' class='glyphicon glyphicon-home hidden-text' onclick='shell.cd(\"/\")'> </a>";
+	elm.innerHTML="<a href='#' class='glyphicon glyphicon-home hidden-text'  data-href='/' onclick='shell.cd(this.getAttribute(\"data-href\"));'> </a>";
 	var directories = decodeURIComponent(this.cwd).split('/');
 	var directory = "";
 	for (i = 0; i < directories.length; i++) {
@@ -130,7 +149,7 @@ shell.onchange = function(content)
 			changedir.appendChild(elm);
 			elm = document.createElement("li");
 			//elm.className="col-xs-2";
-			elm.innerHTML = "<a href='#' class='dir' onclick='shell.cd(\""+directory+"\")'>"+directories[i]+"</a>";
+			elm.innerHTML = "<a href='#' class='dir' data-href='"+directory+"' onclick='shell.cd(this.getAttribute(\"data-href\"));'>"+directories[i]+"</a>";
 		}
 	}
 	elm.class += " active";
@@ -146,9 +165,8 @@ shell.onchange = function(content)
 		$("#Message").find("div.text").html();
 		$("#Message").addClass("hidden");
 	}
-	if (upload != undefined)
+	if (uploaders.length > 0)
 	{
-		$("#Message").find("div.text").html("Upload : "+ upload.file.name);
 		$("#Message").removeClass("hidden");
 	}
 
@@ -175,13 +193,13 @@ shell.onchange = function(content)
 			hidden=" hidden";
 		var escapingname = encodeURIComponent(content[i].name);
 		//var downloadmenu =	"<li class=''><a href='#' data-href=\""+escapingname+"\" onclick='downloadFile(this.getAttribute(\"data-href\"));'><span class='glyphicon glyphicon-download'></span> download</a></li>"
-		var downloadmenu =	"<li class=''><a href=\""+shell.root+"/"+shell.cwd+"/"+escapingname+"\" download><span class='glyphicon glyphicon-download'></span> download</a></li>"
+		var downloadmenu =	"<li class=''><a href=\""+shell.root+"/"+shell.cwd+"/"+escapingname+"\" download><span class='glyphicon glyphicon-cloud-download'></span> download</a></li>"
 		var deletemenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" onclick='rmfile(this);'><span class='glyphicon glyphicon-trash'></span> delete</a></li>"
 		var renamemenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" data-toggle='modal' data-target='#MvBox'><span class='glyphicon glyphicon-duplicate'></span> rename</a></li>"
 		var copymenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" onclick='shell.cp(this.getAttribute(\"data-href\"));'><span class='glyphicon glyphicon-copy'></span> copy</a></li>"
-		var sharemenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" data-toggle='modal' data-target='#ShareBox'><span class='glyphicon glyphicon-share'></span> share</a></li>"
+		var sharemenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" data-toggle='modal' data-target='#ShareBox'><span class='glyphicon glyphicon-share-alt'></span> share</a></li>"
 
-		var dropmenu 	= "<ul class='dropdown-menu' aria-labelledby='menu"+i+"'>"
+		var dropmenu 	= "<ul class='dropdown-menu dropdown-menu-right' aria-labelledby='menu"+i+"'>"
 
 		var mime = "";
 		if (content[i].mime != undefined)
@@ -191,7 +209,7 @@ shell.onchange = function(content)
 
 		if (content[i].type == 4)
 		{
-			elm.innerHTML = "<span class='glyphicon glyphicon-folder-open col-xs-1 col-xs-2 center'></span>";
+			elm.innerHTML = "<span class='glyphicon glyphicon-folder-open col-xs-2 col-sm-1 center'></span>";
 			elm.innerHTML += "<span class='name col-xs-8'><a href='#' data-mime='"+mime+"' data-href='"+this.cwd+"/"+escapingname+"' onclick='shell.cd(this.getAttribute(\"data-href\"));'>"+content[i].name+"</a></span>";
 			dropmenu	+= deletemenu+renamemenu;
 			elm.innerHTML += "<span class='col-sm-2 hidden-xs col-pull-right center'></span>";
@@ -217,27 +235,6 @@ shell.onchange = function(content)
 		ls.appendChild(elm);
 	}
 }
-shell.onput = function(file)
-{
-	var ret = confirm("upload "+file.name+" ?");
-	if (ret)
-	{
-		$("#Message").removeClass("hidden").find("div.text").html("Upload <b>"+ file.name + "</b>: <span id='bitrate'></span>");
-		$("#Progress").removeClass("hidden");
-		$("#Progress").find("div[role=progressbar]")[0].style.width = 0;
-		upload.onprogress = function(bitrate, unit)
-		{
-			$("#bitrate").html(""+bitrate+" "+unit);
-		};
-		upload.start();
-	}
-	else
-	{
-		delete upload;
-		upload = undefined;
-	}
-	return ret;
-}
 shell.onbegin = function(id)
 {
 	$("#ReloadButton").addClass("btn-warning");
@@ -245,15 +242,22 @@ shell.onbegin = function(id)
 shell.oncompleted = function(id)
 {
 	$("#ReloadButton").removeClass("btn-warning");
-	if (upload != undefined && upload.id == id)
+	if (uploaders.length > 0)
 	{
-		$("#Progress").addClass("hidden");
-		if (upload.error == undefined)
+		var i;
+		for (i = 0; i < uploaders.length; i++)
 		{
-			delete upload;
-			upload = undefined;
-			shell.ls();
+			var upload = uploaders[i];
+			if (upload.error == undefined)
+			{
+				upload.stop();
+				delete upload;
+				upload = undefined;
+				shell.ls();
+			}
 		}
+		if (uploaders.length == 0)
+			$("#Progress").addClass("hidden");
 	}
 	else
 		shell.ls();
@@ -263,8 +267,8 @@ shell.onprogress = function(id, percent, loaded, total)
 	if (loaded < total)
 	{
 		$("#Progress").removeClass("hidden");
-		if (upload != undefined)
-			upload.loaded = loaded;
+		if (uploaders != undefined)
+			uploaders.loaded = loaded;
 		$("#Progress").find("div[role=progressbar]")[0].style.width = ""+percent+"%";
 	}
 	else
@@ -274,30 +278,31 @@ shell.onerror = function(status)
 {
 	$("#Progress").addClass("hidden");
 	var message = "";
-	if (upload != undefined)
+	var i;
+	for (i = 0; i < uploaders.length; i++)
 	{
 		message += "Upload <b>" + upload.file.name + "</b>: ";
 		upload.error = status;
-	}
-	switch (status)
-	{
-		case 416:
-			message += "File already existing";
-		break;
-		case 401:
-			message += "Authentication required";
-		break;
-		case 400:
-			message += "Server error";
-		break;
-		case 404:
-			message += "File not found";
-		break;
-		case 405:
-			message += "Request error";
-		break;
-		default:
-			message += "error: "+status;
+		switch (status)
+		{
+			case 416:
+				message += "File already existing";
+			break;
+			case 401:
+				message += "Authentication required";
+			break;
+			case 400:
+				message += "Server error";
+			break;
+			case 404:
+				message += "File not found";
+			break;
+			case 405:
+				message += "Request error";
+			break;
+			default:
+				message += "error: "+status;
+		}
 	}
 	$("#Message").removeClass("hidden").find("div.text").html(message);
 	$("#ReloadButton").removeClass("btn-warning");
@@ -390,51 +395,54 @@ $(document).ready(function()
 				<div class="navbar-header">
 					<button type="button" class="collapsed navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
 						<span class="sr-only">Toggle navigation</span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
+						<span class='glyphicon glyphicon-menu-hamburger' aria-hidden="true"></span>
 					</button>
+<!--
+					<button type="button" class="navbar-toggle btn btn-default" data-toggle="collapse" data-target="" id="backward" onclick="shell.cd(this.getAttribute('data-href'));">
+						<span class='glyphicon glyphicon-menu-left' aria-hidden="true"></span>
+					</button>
+					<button type="button" class="navbar-toggle btn btn-default" data-toggle="collapse" data-target="" data-href="/" onclick="shell.cd(this.getAttribute('data-href'));">
+						<span class='glyphicon glyphicon-home' aria-hidden="true"></span>
+					</button>
+-->
 					<a href="#" class="navbar-brand">Ouistiti</a>
+					<ol class="navbar-text breadcrumb" id="changedir" style="margin:0;padding:15px">
+						<li><a href="#" class='glyphicon glyphicon-home hidden-text' data-href="/" onclick="shell.cd(this.getAttribute('data-href'));"> </a></li>
+					</ol>
 				</div>
 				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-					<ul class="nav navbar-nav">
-						<li class="dropdown ProtectedButton hidden"> <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">File<span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li><a href="#" data-toggle="modal" data-target="#UploadBox">Upload</a></li>
-								<li><a href="#" data-toggle="modal" data-target="#MkdirBox">Make Dir</a></li>
-								<li><a href="#" onclick="shell.paste()">Paste</a></li>
-<!--
-								<li role="separator" class="divider"></li>
-								<li class="ProtectedButton hidden"><a href="#">Delete</a></li>
-								<li><a href="#">Rename</a></li>
-								<li><a href="#">Separated link</a></li>
--->
-							</ul>
-						</li>
-						<li class="navbar-btn">
-							<ol class="breadcrumb" id="changedir" style="margin-bottom:0;"></ol>
-						</li>
-					</ul>
 					<form class="navbar-form navbar-right">
 						<div class="input-group">
 							<div class="input-group-btn">
-								<button type="button" class="btn btn-default hidden" id="ReloadButton">
+								<button type="button" class="btn btn-default hidden" data-toggle="tooltip" data-placement="left" title="Reload folder" id="ReloadButton">
 									<span class='glyphicon glyphicon-refresh' aria-hidden="true"></span>&nbsp
 								</button>
-								<label class="btn btn-default navbar-btn ProtectedButton hidden" for="UploadStart" id="UploadButton"><input id="UploadStart" type="file" style="display:none;"/>
+								<label class="btn btn-default navbar-btn ProtectedButton hidden" data-toggle="tooltip" data-placement="left" title="Upload file" for="UploadStart" id="UploadButton"><input id="UploadStart" type="file" style="display:none;" multiple/>
 									<span class='glyphicon glyphicon-cloud-upload' aria-hidden="true"></span>&nbsp
 								</label>
+								<button type="button" class="btn btn-default navbar-btn ProtectedButton hidden" data-toggle="modal" data-target="#MkdirBox">
+									<span class='glyphicon glyphicon-folder-open' aria-hidden="true"></span>&nbsp
+								</label>
+								<button tupe="button" class="btn btn-default navbar-btn ProtectedButton hidden" data-toggle="tooltip" data-placement="left" title="Paste file" onclick="shell.paste()">
+									<span class='glyphicon glyphicon-paste' aria-hidden="true"></span>&nbsp
+								</label>
+							</div>
+							<div class="input-group-btn hidden">
 								<div class="form-group hidden">
 									<input class="form-control" placeholder="Search" type="text">
 								</div>
 								<button type="button" class="btn btn-default hidden">
 									<span class='glyphicon glyphicon-search' aria-hidden="true"></span>
 								</button>
+							</div>
+						</div>
+						<div class="input-group">
+							<div class="input-group-btn">
 								<button type="button" class="btn btn-default" data-toggle="modal" data-target="#LoginBox" id="LoginButton">
 									<span class='glyphicon glyphicon-user' aria-hidden="true"></span>&nbsp
 								</button>
-								<button type="button" class="btn btn-default hidden" id="UserButton"></button>
-								<button type="button" class="btn btn-default hidden" id="LogoutButton">&nbsp;
+								<button type="button" class="btn btn-default hidden" data-toggle="tooltip" data-placement="left" title="User setting" id="UserButton"></button>
+								<button type="button" class="btn btn-default hidden" data-toggle="tooltip" data-placement="left" title="Logout" id="LogoutButton">&nbsp;
 									<span class='glyphicon glyphicon-off'></span>&nbsp;
 								</button>
 							</div>
