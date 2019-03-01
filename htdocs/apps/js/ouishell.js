@@ -26,8 +26,12 @@ class User
 
 class Authenticate
 {
-	constructor(challenge)
+	constructor(challenge, base)
 	{
+		if (base != undefined)
+			this.base = base;
+		else
+			this.base = "";
 		this.uploadXHR = new XMLHttpRequest();
 		this.encoder = new TextEncoder("utf-8");
 		this.challenge = challenge;
@@ -176,7 +180,7 @@ class Authenticate
 			}
 			return true;
 		}.bind(this);
-		xhr.open(this.method, this.url, true);
+		xhr.open(this.method, this.base+this.url, true);
 		if (this.authorization != undefined)
 		{
 			xhr.withCredentials = true;
@@ -188,8 +192,12 @@ class Authenticate
 };
 class Open
 {
-	constructor(root)
+	constructor(root, base)
 	{
+		if (base != undefined)
+			this.base = base;
+		else
+			this.base = "";
 		this.root = root;
 		this.uploadXHR = new XMLHttpRequest();
 		this.isready = false;
@@ -262,12 +270,18 @@ class Open
 			}
 			return true;
 		}.bind(this);
+		xhr.onerror = function(err)
+		{
+			console.log("Open error: "+err);
+			if (this.onerror != undefined)
+				this.onerror.call(this, err);
+		}.bind(this);
 		var target = this.directory;
 		if (this.file.name == undefined)
 			this.file.name = "";
 		target += this.file.name; 
 		
-		xhr.open("GET", target);
+		xhr.open("GET", this.base+target);
 		//xhr.responseType = "arraybuffer";
 		xhr.responseType = "blob";
 		xhr.withCredentials = true;
@@ -309,8 +323,12 @@ class Open
 };
 class Remove
 {
-	constructor(root)
+	constructor(root, base)
 	{
+		if (base != undefined)
+			this.base = base;
+		else
+			this.base = "";
 		this.root = root;
 		this.uploadXHR = new XMLHttpRequest();
 		this.isready = false;
@@ -377,10 +395,16 @@ class Remove
 			}
 			return true;
 		}.bind(this);
+		xhr.onerror = function(err)
+		{
+			console.log("Remove error: "+err);
+			if (this.onerror != undefined)
+				this.onerror.call(this, err);
+		}.bind(this);
 		var directory = this.directory;
 		if (this.directory == undefined)
 			directory = "";
-		xhr.open("DELETE", directory+this.file.name);
+		xhr.open("DELETE", this.base+directory+this.file.name);
 		xhr.responseType = "text/json";
 		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 		if (authorization)
@@ -390,8 +414,12 @@ class Remove
 };
 class Change
 {
-	constructor(root)
+	constructor(root, base)
 	{
+		if (base != undefined)
+			this.base = base;
+		else
+			this.base = "";
 		this.root = root;
 		this.uploadXHR = new XMLHttpRequest();
 		this.isready = false;
@@ -476,10 +504,16 @@ class Change
 			}
 			return true;
 		}.bind(this);
+		xhr.onerror = function(err)
+		{
+			console.log("Change error: "+err);
+			if (this.onerror != undefined)
+				this.onerror.call(this, err);
+		}.bind(this);
 		var directory = this.directory;
 		if (this.directory == undefined)
 			directory = "";
-		xhr.open("POST", directory+this.file.name);
+		xhr.open("POST", this.base+directory+this.file.name);
 		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 
 		if (this.post.type == "header")
@@ -499,8 +533,12 @@ class Change
 };
 class UpLoader
 {
-	constructor(root)
+	constructor(root, base)
 	{
+		if (base != undefined)
+			this.base = base;
+		else
+			this.base = "";
 		this.root = root;
 		this.uploadXHR = new XMLHttpRequest();
 		this.reader = new FileReader();
@@ -546,8 +584,10 @@ class UpLoader
 				}
 			}.bind(this);
 		this.reader.onerror = function(err) {
-          alert("load error "+err);
-        }.bind(this);
+				console.log("Load error: "+err);
+				if (this.onerror != undefined)
+					this.onerror.call(this, err);
+			}.bind(this);
 		this.reader.readAsArrayBuffer(this.file);
 	}
 	exec(authorization)
@@ -613,18 +653,26 @@ class UpLoader
 		}.bind(this);
 		xhr.ontimeout = function()
 		{
-			alert("Uploader timeout");
+			console.log("Uploader timeout");
+			if (this.onerror != undefined)
+				this.onerror.call(this, "timeout");
+		}.bind(this);
+		xhr.onerror = function(err)
+		{
+			console.log("Uploader error: "+err);
+			if (this.onerror != undefined)
+				this.onerror.call(this, err);
 		}.bind(this);
 		var data = undefined;
 		if (this.file != undefined)
 		{
 			var filename = this.directory+this.file.name;
-			xhr.open("PUT", filename);
+			xhr.open("PUT", this.base+filename);
 			data = this.file;
 		}
 		else
 		{
-			xhr.open("PUT", this.directory);
+			xhr.open("PUT", this.base+this.directory);
 		}
 		xhr.responseType = "text/json";
 		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
@@ -635,7 +683,7 @@ class UpLoader
 };
 class Shell
 {
-	constructor(output)
+	constructor(url, output)
 	{
 		this.directories =
 		{
@@ -645,6 +693,11 @@ class Shell
 			documents:"/",
 			private:"/private"
 		};
+		var location;
+		if (url != undefined && url instanceof URL)
+			location = url;
+		else
+			location = window.location;
 		var search = location.search.substring(1).split("&");
 		var root = search.find(function(elem){
 				return elem.startsWith("root=");
@@ -658,7 +711,8 @@ class Shell
 			//remove the last part of the pathname, the name of the file and the rest...
 			root = location.pathname.replace(/\\/g,'/').replace(/\/[^\/]*$/, '').replace(/^\/?|\/?$/, '');
 		}
-		this.chroot(root);
+		var base = location.protocol+"//"+location.host;
+		this.chroot(root, base);
 		var cwd = search.find(function(elem){
 				return elem.startsWith("cwd=");
 			});
@@ -700,18 +754,18 @@ class Shell
 				this.onerror(status);
 		}.bind(this);
 	}
-	chroot(root)
+	chroot(root, base)
 	{
+		if (base != undefined)
+			this.base = base;
 		if (root.lastIndexOf('/') != root.length - 1)
 			root += '/';
 		this.root = "/";
 		this.root += root.replace(/\\/g,'/').replace(/^\/?|\/?$/, '');
-		if (this.root == "/")
-			this.root = "";
 
 		if (this.open != undefined)
 			delete this.open;
-		this.open = new Open(this.root);
+		this.open = new Open(this.root, this.base);
 		this.open.onauthenticate = function(challenge, result)
 		{
 			this.authenticate.challenge = challenge;
@@ -733,7 +787,7 @@ class Shell
 
 		if (this.remove != undefined)
 			delete this.remove;
-		this.remove = new Remove(this.root);
+		this.remove = new Remove(this.root, this.base);
 		this.remove.onauthenticate = function(challenge, result)
 		{
 			this.authenticate.challenge = challenge;
@@ -748,7 +802,7 @@ class Shell
 
 		if (this.uploader != undefined)
 			delete this.uploader;
-		this.uploader = new UpLoader(this.root);
+		this.uploader = new UpLoader(this.root, this.base);
 		this.onput = undefined;
 		this.onprogress = undefined;
 		this.uploader.onload = function(file)
@@ -1001,10 +1055,8 @@ class Shell
 			{
 				this.uploader.onupload = function(file)
 				{
-					alert("cp 1");
 					if (typeof(pipe) == "function")
 					{
-					alert("cp 2");
 						pipe(file);
 					}
 					if (this.oncompleted != undefined)
@@ -1182,7 +1234,7 @@ class Shell
 	}
 	put(file, pipe)
 	{
-		var uploader = new UpLoader(this.root);
+		var uploader = new UpLoader(this.root, this.base);
 		uploader.shell = this;
 		uploader.onload = function(file)
 		{
