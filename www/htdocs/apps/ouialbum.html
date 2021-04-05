@@ -25,6 +25,10 @@ shell.onchange = function(content)
 	var elm = "<li><a href='#' data-href='"+encodeURIComponent(this.cwd)+"/..' onclick='shell.cd(this.getAttribute(\"data-href\"));'><span class='glyphicon glyphicon-arrow-left'>back</span></a></li>";
 	albumslist.append(elm);	
 	var startid = 0;
+	content.sort(function (a,b)
+		{
+			return a.name.localeCompare(b.name);
+		});
 	for (i = 0; i < content.length; i++) {
 		var escapingname = encodeURIComponent(content[i].name);
 		if (content[i].type == 4)
@@ -41,7 +45,7 @@ shell.onchange = function(content)
 				var elm = "<li data-target='#Album' data-slide-to='"+i+"' class=''></li>";
 				indicators.append(elm);
 				var img = "<div data-slide-to='"+i+"' class='item '>";
-				img += "<img src='"+shell.root+"/"+shell.cwd+"/"+escapingname+"' class='img-rounded' alt='"+escapingname+"' style='float: none; margin: 0 auto;max-height: 800px'>";
+				img += "<img src='"+shell.root+shell.cwd+escapingname+"' class='img-rounded' alt='"+escapingname+"' style='float: none; margin: 0 auto;max-height: 800px'>";
 				img += "</div>";
 				inner.append(img);
 				$("#Message").html("");

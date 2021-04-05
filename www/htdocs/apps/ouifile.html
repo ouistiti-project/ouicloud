@@ -62,6 +62,13 @@ class UploadFile
 	}
 	start()
 	{
+		this.tmperror = shell.onerror;
+		shell.onerrror = function()
+		{
+			// TODO doesn't work with multiple files
+			$("#uploadline"+this.id).addClass("alert alert-danger");
+			shell.onerror = this.tmperror;
+		}.bind(this);
 		this.id = shell.put(this.file);
 		var progress = $("<div class='progress'></div>")
 			.append("<div id='progress"+this.id+"' class='progress-bar progress-bar-striped active' role='progressbar' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'></div>");
@@ -119,41 +126,29 @@ function startReadFromDrag(evt) {
     evt.preventDefault();
 }
 
-function launchlink(elem)
-{
-	shell.launch($(elem).data("href"), $(elem).data("mime"));
-}
-
-function rmfile(elem)
-{
-	var ret = confirm("remove "+file.name+" ?");
-	if (ret)
-	{
-		shell.rm($(elem).data('href'));
-	}
-}
-
 var shell = new Shell("");
 shell.onchange = function(content)
 {
-	var changedir = document.getElementById("changedir");
-	changedir.innerHTML = "";
-	var elm = document.createElement("li");
-	elm.innerHTML="<a href='#' class='glyphicon glyphicon-home hidden-text'  data-href='/' onclick='shell.cd(this.getAttribute(\"data-href\"));'> </a>";
+	var changedir = $("#changedir").html("");
+	var newlink = $("<a href='#' class='directory glyphicon glyphicon-home hidden-text'></a>").data("href", "/");
 	var directories = decodeURIComponent(this.cwd).split('/');
 	var directory = "";
-	for (i = 0; i < directories.length; i++) {
+	for (i = 0; i < directories.length; i++)
+	{
 		if (directories[i].length > 0)
 		{
 			directory+="/"+encodeURIComponent(directories[i]);
-			changedir.appendChild(elm);
-			elm = document.createElement("li");
-			//elm.className="col-xs-2";
-			elm.innerHTML = "<a href='#' class='dir' data-href='"+directory+"' onclick='shell.cd(this.getAttribute(\"data-href\"));'>"+directories[i]+"</a>";
+			changedir.append($("<li></li>").append(newlink));
+			var newlink = $("<a href='#' class='directory'></a>");
+			newlink.data("href", directory).text(directories[i]);
 		}
 	}
-	elm.class += " active";
-	changedir.appendChild(elm);
+	changedir.append($("<li></li>").addClass("active").append(newlink));
+	$(".directory").on('click', function(event)
+		{
+			var elem = $(event.target);
+			shell.cd($(elem).data("href"));
+		});
 
 	if (content.length == 0)
 	{
@@ -170,9 +165,6 @@ shell.onchange = function(content)
 		$("#Message").removeClass("hidden");
 	}
 
-	var ls = document.getElementById("ls");
-	ls.innerHTML = "";
-
 	content.sort(function (a,b)
 		{
 			if (a.type == b.type)
@@ -184,61 +176,91 @@ shell.onchange = function(content)
 				return a.type - b.type;
 			}
 		});
-	for (i = 0; i < content.length; i++) {
-		var elm = document.createElement("li");
-		elm.className = "list-group-item row";
 
-		var hidden = "";
-		if (!shell.authenticate.islog || shell.user == undefined)
-			hidden=" hidden";
-		var escapingname = encodeURIComponent(content[i].name);
-		//var downloadmenu =	"<li class=''><a href='#' data-href=\""+escapingname+"\" onclick='downloadFile(this.getAttribute(\"data-href\"));'><span class='glyphicon glyphicon-download'></span> download</a></li>"
-		var downloadmenu =	"<li class=''><a href=\""+shell.root+"/"+shell.cwd+"/"+escapingname+"\" download><span class='glyphicon glyphicon-cloud-download'></span> download</a></li>"
-		var deletemenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" onclick='rmfile(this);'><span class='glyphicon glyphicon-trash'></span> delete</a></li>"
-		var renamemenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" data-toggle='modal' data-target='#MvBox'><span class='glyphicon glyphicon-duplicate'></span> rename</a></li>"
-		var copymenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" onclick='shell.cp(this.getAttribute(\"data-href\"));'><span class='glyphicon glyphicon-copy'></span> copy</a></li>"
-		var sharemenu	=	"<li class='ProtectedButton"+hidden+"'><a href='#' data-href=\""+escapingname+"\" data-toggle='modal' data-target='#ShareBox'><span class='glyphicon glyphicon-share-alt'></span> share</a></li>"
+	var ls = $("#ls");
+	ls.html("");
 
-		var dropmenu 	= "<ul class='dropdown-menu dropdown-menu-right' aria-labelledby='menu"+i+"'>"
-
-		var mime = "";
-		if (content[i].mime != undefined)
+	for (i = 0; i < content.length; i++)
+	{
+		var downloadmenu = $("<li><a><span class='glyphicon glyphicon-cloud-download'></span> download</a></li>");
+		downloadmenu.children("a").on("click", function(event)
 		{
-			mime += content[i].mime;
-		}
+			
+		});
+		var deletemenu = $("<li><a href='#' ><span class='glyphicon glyphicon-trash'></span> delete</a></li>");
+		deletemenu.children("a").on("click", function(event)
+		{
+			var elem = $(event.target).parents(".direntry")[0];
+			var ret = confirm("remove "+file.name+" ?");
+			if (ret)
+			{
+				shell.rm($(elem).data('href'));
+			}
+		});
+		var copymenu = $("<li><a href='#' ><span class='glyphicon glyphicon-copy'></span> copy</a></li>");
+		copymenu.children("a").on("click", function(event)
+		{
+			var elem = $(event.target).parents(".direntry")[0];
+			var ret = confirm("copy "+file.name+" ?");
+			if (ret)
+			{
+				shell.cp($(elem).data('href'));
+			}
+		});
+		var renamemenu = $("<li><a href='#' data-toggle='modal' data-target='#MvBox'><span class='glyphicon glyphicon-duplicate'></span> rename</a></li>");
+		var sharemenu = $("<li><a href='#' data-toggle='modal' data-target='#ShareBox'><span class='glyphicon glyphicon-share-alt'></span> share</a></li>");
 
+		var dropmenu = $("<ul aria-labelledby='menu"+i+"'></ul>").addClass("dropdown-menu dropdown-menu-right");
+		var escapingname = encodeURIComponent(content[i].name);
+		var entry = $("<li></li>").addClass("list-group-item row direntry").data("href", escapingname);
+		entry.data("name", content[i].name).data("mime", content[i].mime).data("type", content[i].type);
 		if (content[i].type == 4)
 		{
-			elm.innerHTML = "<span class='glyphicon glyphicon-folder-open col-xs-2 col-sm-1 center'></span>";
-			elm.innerHTML += "<span class='name col-xs-8'><a href='#' data-mime='"+mime+"' data-href='"+this.cwd+"/"+escapingname+"' onclick='shell.cd(this.getAttribute(\"data-href\"));'>"+content[i].name+"</a></span>";
-			dropmenu	+= deletemenu+renamemenu;
-			elm.innerHTML += "<span class='col-sm-2 hidden-xs col-pull-right center'></span>";
-		}
-		else if (content[i].type == 8)
-		{
-			elm.innerHTML = "<span class='glyphicon glyphicon-file col-xs-2 col-sm-1 center'></span>";
-			elm.innerHTML += "<span class='name col-xs-8'><a href='#' data-mime='"+mime+"' data-href=\""+escapingname+"\" onclick='launchlink(this)'>"+content[i].name+"</a></span>";
-			dropmenu	+= downloadmenu+deletemenu+renamemenu+copymenu+sharemenu;
-			elm.innerHTML += "<span class='col-sm-2 hidden-xs col-pull-right center'>"+content[i].size+"</span>";
+			entry_html = "<span class='glyphicon glyphicon-folder-open col-xs-2 col-sm-1 center'></span>";
+			entry_html += "<span class='name col-xs-8'><a href='#' class='entrylaunch'>"+content[i].name+"</a></span>";
+			entry_html += "<span class='col-sm-2 hidden-xs col-pull-right center'></span>";
+			dropmenu.append(deletemenu);
+			dropmenu.append(renamemenu);
 		}
 		else
 		{
-			elm.innerHTML = "<span class='glyphicon glyphicon-link col-xs-2 col-sm-1'></span>";
-			elm.innerHTML += "<span class='name col-xs-8' data-mime='"+mime+"'>"+content[i].name+"</span>";
-			dropmenu	+= downloadmenu+deletemenu+renamemenu+copymenu+sharemenu;
-			elm.innerHTML += "<span class='col-sm-2 hidden-xs col-pull-right center'>"+content[i].size+"</span>";
+			if (content[i].type == 8)
+			{
+				entry_html = "<span class='glyphicon glyphicon-file col-xs-2 col-sm-1 center'></span>";
+			}
+			else
+			{
+				entry_html = "<span class='glyphicon glyphicon-link col-xs-2 col-sm-1 center'></span>";
+			}
+			entry_html += "<span class='name col-xs-8'><a href='#' class='entrylaunch'>"+content[i].name+"</a></span>";
+			entry_html += "<span class='col-sm-2 hidden-xs col-pull-right center'>"+content[i].size+"</span>";
+			dropmenu.append(downloadmenu);
+			dropmenu.append(deletemenu);
+			dropmenu.append(renamemenu);
+			dropmenu.append(sharemenu);
 		}
-
-		dropmenu	+= "</ul>";
-		var dropdown 	= "<span class='dropdown'><button href='#' id='menu"+i+"' class='btn btn-default dropdown-toggle' data-toggle='dropdown' role='button' aria-haspopup='true' aria-expanded='false'><span class='glyphicon glyphicon-list'></span></button>"+dropmenu+"</span>";
-		elm.innerHTML += "<span class='col-xs-2 col-sm-1 col-pull-right center'>"+dropdown+"</span>";
-		ls.appendChild(elm);
+		entry_html += "<span class='col-xs-2 col-sm-1 col-pull-right center entrymenu'></span>";
+		entry.html(entry_html);
+		var dropdown 	= $("<span class='dropdown'><button href='#' id='menu"+i+"' class='btn btn-default dropdown-toggle' data-toggle='dropdown' role='button' aria-haspopup='true' aria-expanded='false'><span class='glyphicon glyphicon-list'></span></button></span>");
+		dropdown.append(dropmenu);
+		entry.children(".entrymenu").append(dropdown);
+		ls.append(entry);
 	}
+	$(".entrylaunch").on("click", function(event)
+	{
+		var elem = $(event.target).parents(".direntry")[0];
+		if ($(elem).data("type") == 4)
+			shell.cd($(elem).data('href'));
+		else
+			shell.launch($(elem).data('href'), $(elem).data('mime'));
+	});
 }
+
 shell.onbegin = function(id)
 {
 	$("#ReloadButton").addClass("btn-warning");
 }
+
 shell.oncompleted = function(id)
 {
 	$("#ReloadButton").removeClass("btn-warning");
@@ -281,6 +303,7 @@ shell.onerror = function(status)
 	var i;
 	for (i = 0; i < uploaders.length; i++)
 	{
+		var upload =  uploaders[i];
 		message += "Upload <b>" + upload.file.name + "</b>: ";
 		upload.error = status;
 		switch (status)

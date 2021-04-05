@@ -15,7 +15,7 @@ class User
 			documents:"/Documents",
 			private:"/Private"
 		};
-		this.mimes = 
+		this.mimes =
 		[
 			{ type:"text/*",appli:"ouiedit.html"},
 			{ type:"image/*",appli:"ouialbum.html"},
@@ -84,6 +84,11 @@ class Authenticate
 		digest+=atob(this.algo(a2));
 		return digest;
 	}
+	bearer()
+	{
+		var token = "";
+		return "Bearer "+token;
+	}
 
 	build()
 	{
@@ -91,6 +96,8 @@ class Authenticate
 			this.authorization = this.digest();
 		else if (this.challenge.search("Basic") > -1)
 			this.authorization = this.basic();
+		else if (this.challenge.search("Bearer") > -1)
+			this.authorization = this.bearer();
 		this.result = "failed";
 	}
 
@@ -246,7 +253,7 @@ class Open
 			else if (xhr.readyState >= XMLHttpRequest.LOADING &&
 					xhr.status > 399)
 			{
-			
+
 				if (xhr.status === 403)
 				{
 					if (this.onauthenticate != undefined)
@@ -279,8 +286,8 @@ class Open
 		var target = this.directory;
 		if (this.file.name == undefined)
 			this.file.name = "";
-		target += this.file.name; 
-		
+		target += this.file.name;
+
 		xhr.open("GET", this.base+target);
 		//xhr.responseType = "arraybuffer";
 		xhr.responseType = "blob";
@@ -605,7 +612,7 @@ class UpLoader
 			var xhr = this.uploadXHR;
 			if (xhr.readyState === XMLHttpRequest.DONE)
 			{
-				if (xhr.status === 200)
+				if (xhr.status < 300)
 				{
 					this.isready = false;
 					if (this.onupload != undefined)
@@ -616,7 +623,7 @@ class UpLoader
 			else if (xhr.readyState >= XMLHttpRequest.LOADING &&
 					xhr.status > 399)
 			{
-				if (xhr.status === 403 || xhr.status === 401)
+				if (xhr.status === 401)
 				{
 					if (this.onauthenticate != undefined)
 						this.onauthenticate.call(this, xhr.getResponseHeader("WWW-Authenticate"), "logout");
@@ -879,7 +886,10 @@ class Shell
 		{
 			this.onbegin(id);
 		}
-		this.cwd = directory.replace(/\\/g,'/').replace(/^\/?|\/?$/, '');
+		if (this.cwd.length > 0 && directory[0] != '/')
+			this.cwd += "/" + directory.replace(/\\/g,'/').replace(/^\/?|\/?$/, '');
+		else
+			this.cwd = directory.replace(/\\/g,'/').replace(/^\/?|\/?$/, '');
 		//.replace(/\/[^\/]*$/, '');
 		if (this.oncompleted != undefined)
 		{
@@ -945,8 +955,13 @@ class Shell
 				var regexp = new RegExp(this.user.mimes[i].type);
 				if (regexp.test(mime))
 				{
-					var path = location.pathname.replace(/\\/g,'/').replace(/\/[^\/]*$/, '').replace(/^\/?|\/?$/, '');
-					application = "/"+path+"/"+this.user.mimes[i].appli;
+					if (this.user.mimes[i].appli.indexOf("://") > 0)
+						application = this.user.mimes[i].appli;
+					else
+					{
+						application = location.href.replace(/\\/g,'/').replace(/\/[^\/]*$/, '').replace(/^\/?|\/?$/, '');
+						application += "/"+this.user.mimes[i].appli;
+					}
 					break;
 				}
 			}
@@ -1136,7 +1151,7 @@ class Shell
 		};
 		this.change.command(data);
 		this.change.exec(this.authorization);
-		
+
 /*
 		this.open.onload = function(file)
 		{
@@ -1217,7 +1232,7 @@ class Shell
 		}.bind(this);
 		var file = new Blob();
 		file.name = filepath;
-		
+
 		this.change.open(this.cwd);
 		this.change.set(file);
 		var linkpath;

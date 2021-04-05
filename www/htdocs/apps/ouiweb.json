@@ -2,7 +2,7 @@
 "apps":[
 	{
 	"name":"ouiFile",
-	"image":"/apps/images/ouicloud.png",
+	"image":"/apps/images/ouifile.png",
 	"href":"/apps/ouifile.html",
 	"desc":"manage your data"
 	},
