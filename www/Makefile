@@ -1,4 +1,4 @@
-data-y+=htdocs/login.html
+data-y+=htdocs/apps/signin.html
 data-y+=htdocs/apps/ouiweb.html
 htdocs/apps/ouiweb.html_ALIAS+=htdocs/index.html
 data-y+=htdocs/apps/ouiweb.json
