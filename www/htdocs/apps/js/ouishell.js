@@ -39,6 +39,7 @@ class Authenticate
 		this.username = undefined;
 		this.password = undefined;
 		this.authorization = undefined;
+		this.token = undefined;
 		this.method = "HEAD";
 		// remove the file's name from pathname
 		this.url = location.pathname.replace(/\\/g,'/').replace(/\/[^\/]*$/, '') + "/";
@@ -106,7 +107,10 @@ class Authenticate
 		var xhr = this.uploadXHR;
 
 		document.cookie = "Authorization=;";
+		document.cookie = "X-Auth-Token=;Secure=yes;Path=/;";
+		document.cookie = "X-Auth-Token=";
 		this.authorization = undefined;
+		this.token = undefined;
 		this.result = "logout";
 		this.user = undefined;
 		xhr.onreadystatechange = function()
@@ -126,7 +130,8 @@ class Authenticate
 				}
 			}
 		}.bind(this);
-		xhr.open(this.method, "/?"+this.generateid(), true);
+		xhr.open(this.method, "/logout", true);
+		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 		xhr.setRequestHeader("WWW-Authenticate", "None");
 		xhr.setRequestHeader("Authorization", "None");
 		xhr.send();
@@ -154,6 +159,8 @@ class Authenticate
 						if (home == undefined)
 							home = "~"+username;
 					}
+					var jwt = xhr.getResponseHeader("X-Auth-Token");
+					this.token = jwt;
 					this.user = new User(username, group, home);
 					this.islog = true;
 					if (this.onauthorization != undefined)
@@ -193,6 +200,10 @@ class Authenticate
 			xhr.withCredentials = true;
 			xhr.setRequestHeader("Authorization", this.authorization);
 		}
+		if (this.token != undefined)
+		{
+			xhr.setRequestHeader("X-Auth-Token", this.token);
+		}
 		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 		xhr.send();
 	}
@@ -228,10 +239,10 @@ class Open
 	{
 		this.file = file;
 	}
-	exec(authorization)
+	exec(authenticate)
 	{
 		var xhr = this.uploadXHR;
-
+		var authorization = authenticate.authorization;
 		xhr.onreadystatechange = function()
 		{
 			var xhr = this.uploadXHR;
@@ -295,37 +306,17 @@ class Open
 		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 		if (authorization)
 			xhr.setRequestHeader("Authorization",authorization);
+		if (authenticate.token)
+			xhr.setRequestHeader("X-Auth-Token",authenticate.token);
 		xhr.send();
 	}
 
 	go(target, search)
 	{
-		var targetlocation = target.split("://");
-		var scheme;
-		var hostname;
-		var pathname;
-		if (targetlocation.length == 2)
-		{
-			scheme = targetlocation[0];
-			var index = targetlocation[1].indexOf("/");
-			hostname = targetlocation[1].substring(0, index);
-			pathname = targetlocation[1].substring(index);
-		}
-		else if (targetlocation.length == 1)
-		{
-			scheme = location.protocol.replace(/:?$/, '');
-			hostname = location.hostname;
-			pathname = targetlocation[0];
-			if (!pathname.startsWith('/'))
-				pathname = this.directory+pathname;
-		}
-		switch (scheme)
-		{
-			case "http":
-			case "https":
-				window.open(scheme+"://"+hostname+pathname+search);
-			break;
-		}
+		var separator = "";
+		if (search.indexOf('?') != 0)
+			separator = "?";
+		window.open(target + separator +search);
 	}
 };
 class Remove
@@ -361,9 +352,10 @@ class Remove
 		this.file = file;
 	}
 
-	exec(authorization)
+	exec(authenticate)
 	{
 		var xhr = this.uploadXHR;
+		var authorization = authenticate.authorization;
 
 		xhr.onreadystatechange = function()
 		{
@@ -416,6 +408,8 @@ class Remove
 		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 		if (authorization)
 			xhr.setRequestHeader("Authorization",authorization);
+		if (authenticate.token)
+			xhr.setRequestHeader("X-Auth-Token",authenticate.token);
 		xhr.send();
 	}
 };
@@ -466,9 +460,10 @@ class Change
 			this.post.data = message;
 	}
 
-	exec(authorization)
+	exec(authenticate)
 	{
 		var xhr = this.uploadXHR;
+		var authorization = authenticate.authorization;
 
 		xhr.onreadystatechange = function()
 		{
@@ -535,6 +530,8 @@ class Change
 		}
 		if (authorization)
 			xhr.setRequestHeader("Authorization",authorization);
+		if (authenticate.token)
+			xhr.setRequestHeader("X-Auth-Token",authenticate.token);
 		xhr.send(this.post.data);
 	}
 };
@@ -597,9 +594,10 @@ class UpLoader
 			}.bind(this);
 		this.reader.readAsArrayBuffer(this.file);
 	}
-	exec(authorization)
+	exec(authenticate)
 	{
 		var xhr = this.uploadXHR;
+		var authorization = authenticate.authorization;
 
 		xhr.upload.onprogress = function(event)
 		{
@@ -685,6 +683,8 @@ class UpLoader
 		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 		if (authorization)
 			xhr.setRequestHeader("Authorization",authorization);
+		if (authenticate.token)
+			xhr.setRequestHeader("X-Auth-Token",authenticate.token);
 		xhr.send(data);
 	}
 };
@@ -818,7 +818,7 @@ class Shell
 			if (this.onput != undefined)
 				ret = this.onput.call(this, file);
 			if (this.uploader.isready && (ret == true || ret == undefined))
-				this.uploader.exec(this.authorization);
+				this.uploader.exec(this.authenticate);
 		}.bind(this);
 		this.uploader.onauthenticate = function(challenge, result)
 		{
@@ -940,7 +940,7 @@ class Shell
 		var file = new Blob();
 		file.name = "?timestamp="+id;
 		this.open.set(file);
-		this.open.exec(this.authorization);
+		this.open.exec(this.authenticate);
 		return id;
 	}
 	launch(file, mime)
@@ -999,7 +999,7 @@ class Shell
 		file.name = filename;
 		this.remove.open(this.cwd);
 		this.remove.set(file);
-		this.remove.exec(this.authorization);
+		this.remove.exec(this.authenticate);
 		return id;
 	}
 	paste(pipe)
@@ -1032,7 +1032,7 @@ class Shell
 						this.remove.open(this.cwd);
 						file.name = file.oldname;
 						this.remove.set(file);
-						this.remove.exec(this.authorization);
+						this.remove.exec(this.authenticate);
 					}
 					else
 					{
@@ -1048,7 +1048,7 @@ class Shell
 				}.bind(this);
 				this.uploader.open(this.cwd);
 				this.uploader.set(copy.file);
-				this.uploader.exec(this.authorization);
+				this.uploader.exec(this.authenticate);
 			}
 		}
 		return id;
@@ -1082,7 +1082,7 @@ class Shell
 				this.uploader.open(this.cwd);
 				file.name = file.newname;
 				this.uploader.set(file);
-				this.uploader.exec(this.authorization);
+				this.uploader.exec(this.authenticate);
 			}
 			else
 			{
@@ -1091,7 +1091,7 @@ class Shell
 		}.bind(this);
 		this.open.open(this.cwd);
 		this.open.set(file);
-		this.open.exec(this.authorization);
+		this.open.exec(this.authenticate);
 		return id;
 	}
 	cat(filename, pipe)
@@ -1120,7 +1120,7 @@ class Shell
 		}.bind(this);
 		this.open.open(this.cwd);
 		this.open.set(file);
-		this.open.exec(this.authorization);
+		this.open.exec(this.authenticate);
 		return id;
 	}
 	mv(oldname, newname, pipe)
@@ -1150,7 +1150,7 @@ class Shell
 			arg: this.root + "/" + this.cwd + "/" + newname,
 		};
 		this.change.command(data);
-		this.change.exec(this.authorization);
+		this.change.exec(this.authenticate);
 
 /*
 		this.open.onload = function(file)
@@ -1168,16 +1168,16 @@ class Shell
 				}.bind(this);
 				this.remove.open(this.cwd);
 				this.remove.set(fileold);
-				this.remove.exec(this.authorization);
+				this.remove.exec(this.authenticate);
 			}.bind(this);
 			this.uploader.open(this.cwd);
 			file.name = newname;
 			this.uploader.set(file);
-			this.uploader.exec(this.authorization);
+			this.uploader.exec(this.authenticate);
 		}.bind(this);
 		this.open.open(this.cwd);
 		this.open.set(fileold);
-		this.open.exec(this.authorization);
+		this.open.exec(this.authenticate);
 */
 		return id;
 	}
@@ -1199,6 +1199,11 @@ class Shell
 				this.oncompleted(id);
 			}
 		}.bind(this);
+		this.uploader.onerror = function(status)
+		{
+			if (this.onerror != undefined)
+				this.onerror(status);
+		}.bind(this);
 		if (this.cwd.length > 0)
 		{
 			if (directory != undefined)
@@ -1209,7 +1214,7 @@ class Shell
 		else if (directory != undefined)
 			this.uploader.open(directory);
 		this.uploader.set();
-		this.uploader.exec(this.authorization);
+		this.uploader.exec(this.authenticate);
 		return id;
 	}
 	ln(filepath,link, pipe)
@@ -1245,7 +1250,7 @@ class Shell
 			arg: linkpath,
 		};
 		this.change.command(data);
-		this.change.exec(this.authorization);
+		this.change.exec(this.authenticate);
 	}
 	put(file, pipe)
 	{
@@ -1257,7 +1262,7 @@ class Shell
 			if (this.onput != undefined)
 				ret = this.onput.call(this, file);
 			if (uploader.isready && (ret == true || ret == undefined))
-				uploader.exec(this.authorization);
+				uploader.exec(this.authenticate);
 		}.bind(this);
 		uploader.onauthenticate = function(challenge, result)
 		{
